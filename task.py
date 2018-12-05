@@ -68,7 +68,9 @@ def task(server, player, option, args):
             rest_args = args[1:]
 
             args_to_invoke = [titles] + rest_args
-            task_options[option](*args_to_invoke)
+            msg = task_options[option](*args_to_invoke)
+            if msg:
+                tell_player(server, player, msg)
         else:
             msg = "无效命令, 请用 !!task help 获取帮助"
             tell_player(server, player, msg)
@@ -111,6 +113,7 @@ class Task(object):
 
         t = self.step_down(titles)
         t.sub_tasks.append(sub_task)
+        return "添加成功"
 
     def remove(self, titles):
         title = titles.pop()
@@ -118,6 +121,7 @@ class Task(object):
         t = self.step_down(titles)
         st = t.search(title)
         t.sub_tasks.remove(st)
+        return "删除成功"
 
     def rename(self, titles, new_name):
         t = self.step_down(titles)
@@ -215,3 +219,10 @@ def tasks_from_json_file():
 
 def save_tasks(tasks):
     save_data_as_json_file(tasks.to_dict(), "mc_task.json")
+
+
+if __name__ == '__main__':
+    tasks = tasks_from_json_file()
+    tasks.add(['test'], 'for test')
+    tasks.remove(['test'])
+    tasks.remove(['test'])
