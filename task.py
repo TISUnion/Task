@@ -1,17 +1,19 @@
 import json
 import os
+import traceback
 
 
 help_msg = '''------MCD TASK插件------
 命令帮助如下:
 !!task help 显示帮助信息
 !!task list 显示任务列表
-!!task add [任务名称] [任务描述]
-!!task del [任务名称]
-!!task rename [旧任务名称] [新任务名称]
-!!task change [任务名称] [新任务描述]
-!!task done [任务名称]
-!!task undone [任务名称]
+!!task detail [任务名称] 查看任务详细信息
+!!task add [任务名称] [任务描述] 添加任务
+!!task del [任务名称] 删除任务
+!!task rename [旧任务名称] [新任务名称] 重命名任务
+!!task change [任务名称] [新任务描述] 修改任务描述
+!!task done [任务名称] 标注任务为已完成
+!!task undone [任务名称] 标注任务为未完成
 注: 上述所有 [任务名称] 可以用 [任务名称].[子任务名称] 的形式来访问子任务
 例: !!task add 女巫塔.铺地板 挂机铺黑色玻璃
 --------------------------------'''
@@ -25,12 +27,51 @@ def onServerInfo(server, info):
     if command != '!!task':
         return
 
-    tasks = tasks_from_json_file()
-    if option == 'help':
-        server.tell(info.player, help_msg)
-    elif option == 'add':
-        
+    task(server, info.player, option, args)
 
+
+def task(server, player, option, args):
+    def tell_task_not_found(title):
+        server.tell("未找到任务 §e\"{t}\" ".format(t=title))
+
+    tasks = tasks_from_json_file()
+    task_options = {
+        'add': lambda ts, d: tasks.add(ts, d),
+        'del': lambda ts: tasks.remove(ts),
+        'rename': lambda ts, new: tasks.rename(ts, new),
+        'change': lambda ts, new: tasks.change_description(ts, new),
+        'done': lambda ts: tasks.mark_done(ts),
+        'undone': lambda ts: tasks.mark_undone(ts),
+    }
+    try:
+        if option == 'help':
+            tell_player(server, player, help_msg)
+        elif option == 'list':
+            msg = "任务列表如下：\n" + tasks.list()
+            tell_player(server, player, msg)
+        elif option in task_options.keys():
+            titles = titles_from_arg(args[0])
+            rest_args = args[1:]
+
+            args_to_invoke = [titles] + rest_args
+            task_options[option](*args_to_invoke)
+        else:
+            msg = "无效命令, 请用 !!task help 获取帮助"
+            tell_player(server, player, msg)
+    except TaskNotFoundError as e:
+        tell_task_not_found(e.title)
+    except:
+        f = traceback.format_exc()
+        tell_player(server, player, f)
+
+
+def tell_player(server, player, message):
+    for line in message.splitlines():
+        server.tell(player, line)
+
+
+def titles_from_arg(arg):
+    return arg.split('.')
 
 
 def parsed_info(content):
@@ -99,6 +140,12 @@ class Task(object):
             s.to_dict() for s in sub_tasks
         ]
         return result
+
+    def list(self):
+        s = ""
+        for t in self.sub_tasks:
+            s += "- {title}\n".format(title=t.title)
+        return s
 
     @staticmethod
     def from_dict(data):
