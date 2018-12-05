@@ -72,6 +72,8 @@ def task(server, player, option, args):
         f = traceback.format_exc()
         tell_player(server, player, f)
 
+    save_tasks(tasks)
+
 
 def tell_player(server, player, message):
     for line in message.splitlines():
@@ -201,8 +203,9 @@ def init_tasks_dict():
 
 def tasks_from_json_file():
     init_value = init_tasks_dict()
-    return data_from_json_file("mc_task.json", init_value)
+    task_dict = data_from_json_file("mc_task.json", init_value)
+    return Task.from_dict(task_dict)
 
 
 def save_tasks(tasks):
-    save_data_as_json_file(tasks, "mc_task.json")
+    save_data_as_json_file(tasks.to_dict(), "mc_task.json")
