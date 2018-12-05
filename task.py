@@ -57,6 +57,12 @@ def task(server, player, option, args):
         elif option == 'list':
             msg = "任务列表如下：\n" + tasks.list()
             tell_player(server, player, msg)
+        elif option == 'clear':
+            save_tasks(tasks)
+            with open("mc_task.json", 'w') as f:
+                init_value = init_tasks_dict()
+                f.write(json.dumps(init_value))
+            tell_player("tasks 已清空")
         elif option in task_options.keys():
             titles = titles_from_arg(args[0])
             rest_args = args[1:]
