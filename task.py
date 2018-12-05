@@ -22,6 +22,8 @@ help_msg = '''------MCD TASK插件------
 例: !!task add 女巫塔.铺地板 挂机铺黑色玻璃
 --------------------------------'''
 
+debug_mode = True
+
 
 def onServerInfo(server, info):
     if not info.isPlayer:
@@ -39,8 +41,8 @@ def task(server, player, option, args):
         for line in message.splitlines():
             server.tell(player, line)
 
-    # FIXME: implement a function to handle option array
-    if len(option) == 0:
+    # no option provide, show help msg
+    if no_option(option):
         tell(help_msg)
         return
     else:
@@ -63,11 +65,12 @@ def task(server, player, option, args):
             msg = msg.encode('utf-8')
             tell(msg)
         elif option == 'clear':
+            if not debug_mode:
+                return
+            tasks = Task.empty_task()
             save_tasks(tasks)
-            with open("mc_task.json", 'w') as f:
-                init_value = init_tasks_dict()
-                f.write(json.dumps(init_value))
             tell("tasks 已清空")
+            return
         elif option in task_options.keys():
             titles = titles_from_arg(args[0])
             rest_args = args[1:]
@@ -83,10 +86,15 @@ def task(server, player, option, args):
         msg = "未找到任务 §e{t}".format(t=e.title)
         tell(msg)
     except:
+        # FIXME: empty except for stacktrace echo
         f = traceback.format_exc()
         tell(f)
 
     save_tasks(tasks)
+
+
+def no_option(option):
+    return len(option) == 0
 
 
 def titles_from_arg(arg):
@@ -163,10 +171,16 @@ class Task(object):
         return result
 
     def list(self):
-        s = ""
+        s = u""
         for t in self.sub_tasks:
-            s += "- {title}\n".format(title=t.title)
+            s += u"- {title}\n".format(title=t.title_with_mark())
         return s
+
+    def title_with_mark(self):
+        if self.done:
+            return u"§m{t}§r".format(t=self.title)
+        else:
+            return self.title
 
     @staticmethod
     def from_dict(data):
@@ -205,7 +219,6 @@ def save_data_as_json_file(data, filename):
     with codecs.open(filename, "w", encoding='utf-8') as f:
         json_data = json.dumps(data, indent=4)
         f.write(json_data)
-
 
 
 def init_tasks_dict():
