@@ -4,6 +4,7 @@
 import json
 import os
 import traceback
+import codecs
 
 
 help_msg = '''------MCD TASK插件------
@@ -34,11 +35,14 @@ def onServerInfo(server, info):
 
 
 def task(server, player, option, args):
-    def tell_task_not_found(title):
-        server.tell("未找到任务 §e\"{t}\" ".format(t=title))
+    def tell(message):
+        for line in message.splitlines():
+            server.tell(player, line)
 
+    # FIXME: implement a function to handle option array
     if len(option) == 0:
-        tell_player(server, player, help_msg)
+        tell(help_msg)
+        return
     else:
         option = option[0]
 
@@ -53,16 +57,17 @@ def task(server, player, option, args):
     }
     try:
         if option == 'help':
-            tell_player(server, player, help_msg)
+            tell(help_msg)
         elif option == 'list':
-            msg = "tasks list: \n" + tasks.list()
-            tell_player(server, player, msg)
+            msg = u"搬砖信息列表: \n" + tasks.list()
+            msg = msg.encode('utf-8')
+            tell(msg)
         elif option == 'clear':
             save_tasks(tasks)
             with open("mc_task.json", 'w') as f:
                 init_value = init_tasks_dict()
                 f.write(json.dumps(init_value))
-            tell_player(server, player, "tasks 已清空")
+            tell("tasks 已清空")
         elif option in task_options.keys():
             titles = titles_from_arg(args[0])
             rest_args = args[1:]
@@ -70,22 +75,18 @@ def task(server, player, option, args):
             args_to_invoke = [titles] + rest_args
             msg = task_options[option](*args_to_invoke)
             if msg:
-                tell_player(server, player, msg)
+                tell(msg)
         else:
             msg = "无效命令, 请用 !!task help 获取帮助"
-            tell_player(server, player, msg)
+            tell(msg)
     except TaskNotFoundError as e:
-        tell_task_not_found(e.title)
+        msg = "未找到任务 §e{t}".format(t=e.title)
+        tell(msg)
     except:
         f = traceback.format_exc()
-        tell_player(server, player, f)
+        tell(f)
 
     save_tasks(tasks)
-
-
-def tell_player(server, player, message):
-    for line in message.splitlines():
-        server.tell(player, line)
 
 
 def titles_from_arg(arg):
@@ -188,22 +189,23 @@ class TaskNotFoundError(Exception):
 
 def init_json_file(filename, init_value):
     with open(filename, "w") as f:
-        s = json.dumps(init_value)
+        s = json.dumps(init_value, indent=4)
         f.write(s)
 
 
 def data_from_json_file(filename, init_value):
     if not os.path.exists(filename):
         init_json_file(filename, init_value)
-    with open(filename, "r") as f:
+    with codecs.open(filename, "r", encoding='utf-8') as f:
         data = json.load(f)
     return data
 
 
 def save_data_as_json_file(data, filename):
-    with open(filename, "w") as f:
+    with codecs.open(filename, "w", encoding='utf-8') as f:
         json_data = json.dumps(data, indent=4)
         f.write(json_data)
+
 
 
 def init_tasks_dict():
@@ -224,5 +226,6 @@ def save_tasks(tasks):
 if __name__ == '__main__':
     tasks = tasks_from_json_file()
     tasks.add(['test'], 'for test')
+    save_tasks(tasks)
     tasks.remove(['test'])
     tasks.remove(['test'])
