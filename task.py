@@ -210,14 +210,3 @@ def tasks_from_json_file():
 
 def save_tasks(tasks):
     save_data_as_json_file(tasks, "mc_task.json")
-
-
-if __name__ == "__main__":
-    tasks = Task('', '')
-    tasks.add(['test1'], 'for test')
-    tasks.add(['test1', 'test11'], 'for test11')
-
-    d = tasks.to_dict()
-    save_tasks(d)
-
-    tasks.remove(['test1', 'test11'])
