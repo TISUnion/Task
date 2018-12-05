@@ -37,6 +37,11 @@ def task(server, player, option, args):
     def tell_task_not_found(title):
         server.tell("未找到任务 §e\"{t}\" ".format(t=title))
 
+    if len(option) == 0:
+        tell_player(server, player, help_msg)
+    else:
+        option = option[0]
+
     tasks = tasks_from_json_file()
     task_options = {
         'add': lambda ts, d: tasks.add(ts, d),
