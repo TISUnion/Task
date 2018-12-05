@@ -174,10 +174,6 @@ class TaskNotFoundError(Exception):
         self.title = title
 
 
-def log(*args):
-    print(*args)
-
-
 def init_json_file(filename, init_value):
     with open(filename, "w") as f:
         s = json.dumps(init_value)
