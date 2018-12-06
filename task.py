@@ -59,6 +59,7 @@ def task(server, player, option, args):
         'change': lambda ts, new: tasks.change_description(ts, new),
         'done': lambda ts: tasks.mark_done(ts),
         'undone': lambda ts: tasks.mark_undone(ts),
+        'detail': lambda ts: tasks.detail(ts),
     }
     try:
         if option == 'help':
@@ -160,7 +161,7 @@ class Task(object):
 
     def search(self, title):
         for t in self.sub_tasks:
-            if t.get_title() == title:
+            if t.title.encode('utf-8') == title:
                 return t
         raise TaskNotFoundError(title)
 
@@ -173,9 +174,22 @@ class Task(object):
         return result
 
     def list(self):
-        s = u"搬砖信息列表: \n"
+        s = u"§a搬砖信息列表:§r \n"
         for t in self.sub_tasks:
-            s += u"- {title}\n".format(title=t.title_with_mark())
+            s += u"  - §e{title}§r\n".format(title=t.title_with_mark())
+        return s
+
+    def detail(self, titles):
+        t = self.step_down(titles)
+        return t.detail_inner(ind='')
+
+    def detail_inner(self, ind=''):
+        s = u'{ind}- §e{t}§r\n'.format(ind=ind, t=self.title_with_mark())
+        ind = ind + '    '
+        if self.description:
+            s += u'{ind}§7{d}§7\n'.format(ind=ind, d=self.description)
+        for t in self.sub_tasks:
+            s += t.detail_inner(ind)
         return s
 
     def title_with_mark(self):
@@ -183,9 +197,6 @@ class Task(object):
             return u"§m{t}§r".format(t=self.title)
         else:
             return self.title
-
-    def get_title(self):
-        return self.title.encode('utf-8')
 
     @staticmethod
     def from_dict(data):
@@ -244,6 +255,5 @@ def save_tasks(tasks):
 if __name__ == '__main__':
     tasks = tasks_from_json_file()
     tasks.add(['test'], 'for test')
-    save_tasks(tasks)
-    tasks.remove(['test'])
-    tasks.remove(['test'])
+    tasks.add(['test', 'test1'], 'whatever')
+    print(tasks.detail(['test']))
