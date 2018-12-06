@@ -7,7 +7,7 @@ import traceback
 import codecs
 
 
-help_msg = '''------MCD TASK插件------
+help_msg = u'''------MCD TASK插件------
 命令帮助如下:
 !!task help 显示帮助信息
 !!task list 显示任务列表
@@ -19,7 +19,8 @@ help_msg = '''------MCD TASK插件------
 !!task done [任务名称] 标注任务为已完成
 !!task undone [任务名称] 标注任务为未完成
 注: 上述所有 [任务名称] 可以用 [任务名称].[子任务名称] 的形式来访问子任务
-例: !!task add 女巫塔.铺地板 挂机铺黑色玻璃
+例: (若已经有 女巫塔 任务, 可使用)
+    !!task add 女巫塔.铺地板 挂机铺黑色玻璃
 --------------------------------'''
 
 debug_mode = True
@@ -39,6 +40,8 @@ def onServerInfo(server, info):
 def task(server, player, option, args):
     def tell(message):
         for line in message.splitlines():
+            if isinstance(line, unicode):
+                line = line.encode('utf-8')
             server.tell(player, line)
 
     # no option provide, show help msg
@@ -50,7 +53,7 @@ def task(server, player, option, args):
 
     tasks = tasks_from_json_file()
     task_options = {
-        'add': lambda ts, d: tasks.add(ts, d),
+        'add': lambda ts, d='': tasks.add(ts, d),
         'del': lambda ts: tasks.remove(ts),
         'rename': lambda ts, new: tasks.rename(ts, new),
         'change': lambda ts, new: tasks.change_description(ts, new),
@@ -61,8 +64,7 @@ def task(server, player, option, args):
         if option == 'help':
             tell(help_msg)
         elif option == 'list':
-            msg = u"搬砖信息列表: \n" + tasks.list()
-            msg = msg.encode('utf-8')
+            msg = tasks.list()
             tell(msg)
         elif option == 'clear':
             if not debug_mode:
@@ -158,7 +160,7 @@ class Task(object):
 
     def search(self, title):
         for t in self.sub_tasks:
-            if t.title == title:
+            if t.get_title() == title:
                 return t
         raise TaskNotFoundError(title)
 
@@ -171,7 +173,7 @@ class Task(object):
         return result
 
     def list(self):
-        s = u""
+        s = u"搬砖信息列表: \n"
         for t in self.sub_tasks:
             s += u"- {title}\n".format(title=t.title_with_mark())
         return s
@@ -181,6 +183,9 @@ class Task(object):
             return u"§m{t}§r".format(t=self.title)
         else:
             return self.title
+
+    def get_title(self):
+        return self.title.encode('utf-8')
 
     @staticmethod
     def from_dict(data):
@@ -202,7 +207,7 @@ class TaskNotFoundError(Exception):
 
 
 def init_json_file(filename, init_value):
-    with open(filename, "w") as f:
+    with codecs.open(filename, "w", encoding='utf-8') as f:
         s = json.dumps(init_value, indent=4)
         f.write(s)
 
