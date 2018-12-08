@@ -8,19 +8,19 @@ import codecs
 
 
 help_msg = u'''------MCD TASK插件------
-命令帮助如下:
-!!task help 显示帮助信息
-!!task list 显示任务列表
-!!task detail [任务名称] 查看任务详细信息
-!!task add [任务名称] [任务描述] 添加任务
-!!task del [任务名称] 删除任务
-!!task rename [旧任务名称] [新任务名称] 重命名任务
-!!task change [任务名称] [新任务描述] 修改任务描述
-!!task done [任务名称] 标注任务为已完成
-!!task undone [任务名称] 标注任务为未完成
-注: 上述所有 [任务名称] 可以用 [任务名称].[子任务名称] 的形式来访问子任务
-例: (若已经有 女巫塔 任务, 可使用)
-    !!task add 女巫塔.铺地板 挂机铺黑色玻璃
+§a命令帮助如下:§r
+§6!!task help§r 显示帮助信息
+§6!!task list§r 显示任务列表
+§6!!task detail [任务名称]§r 查看任务详细信息
+§6!!task add [任务名称] [任务描述(可选)]§r 添加任务
+§6!!task del [任务名称]§r 删除任务
+§6!!task rename [旧任务名称] [新任务名称]§r 重命名任务
+§6!!task change [任务名称] [新任务描述]§r 修改任务描述
+§6!!task done [任务名称]§r 标注任务为已完成
+§6!!task undone [任务名称]§r 标注任务为未完成
+注: 上述所有 §6[任务名称]§r 可以用 §6[任务名称].[子任务名称]§r 的形式来访问子任务
+例: (若已经有 §e女巫塔§r 任务, 可使用以下命令添加子任务)
+    §6!!task add 女巫塔.铺地板 挂机铺黑色玻璃§r
 --------------------------------'''
 
 debug_mode = True
@@ -185,9 +185,10 @@ class Task(object):
 
     def detail_inner(self, ind=''):
         s = u'{ind}- §e{t}§r\n'.format(ind=ind, t=self.title_with_mark())
-        ind = ind + '    '
+        ind = ind + '  '
         if self.description:
             s += u'{ind}§7{d}§7\n'.format(ind=ind, d=self.description)
+        ind = ind + '  '
         for t in self.sub_tasks:
             s += t.detail_inner(ind)
         return s
