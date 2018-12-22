@@ -19,6 +19,7 @@ help_msg = u'''------MCD TASK插件------
 §6!!task change [任务名称] [新任务描述]§r 修改任务描述
 §6!!task done [任务名称]§r 标注任务为已完成
 §6!!task undone [任务名称]§r 标注任务为未完成
+§c注: 可用鼠标点击任务查看详情，或点击加号快速添加新任务§r
 注: 上述所有 §6[任务名称]§r 可以用 §6[任务名称].[子任务名称]§r 的形式来访问子任务
 例: (若已经有 §e女巫塔§r 任务, 可使用以下命令添加子任务)
     §6!!task add 女巫塔.铺地板 挂机铺黑色玻璃§r
@@ -105,25 +106,24 @@ class Executor(object):
         if self.option == 'help':
             self.tell(help_msg)
         elif self.option in self.options:
-            method_args = self.args_for_invoke(self.args)
             method_name = "option_" + self.option.replace('-', '_')
             method = getattr(self.tasks, method_name)
-            msg = method(*method_args)
+            msg = method(*self.args)
             if msg:
                 self.tell(msg)
         else:
             msg = "无效命令, 请用 !!task help 获取帮助"
             self.tell(msg)
 
-    def args_for_invoke(self, args):
-        if args:
-            title_arg = args[0]
-            titles = title_arg.split('.')
-            rest_args = args[1:]
-            result = [titles] + rest_args
-        else:
-            result = []
-        return result
+    # def args_for_invoke(self, args):
+    #     if args:
+    #         title_arg = args[0]
+    #         titles = title_arg.split('.')
+    #         rest_args = args[1:]
+    #         result = [titles] + rest_args
+    #     else:
+    #         result = []
+    #     return result
 
 
 class Task(object):
@@ -150,7 +150,9 @@ class Task(object):
         return "添加成功"
 
     def option_del(self, titles):
-        title = titles.pop()
+        ts = titles.split('.')
+        title = ts.pop()
+        titles = '.'.join(ts)
 
         t = self.step_down(titles)
         st = t.search(title)
@@ -178,12 +180,11 @@ class Task(object):
         return "已修改任务描述"
 
     def step_down(self, titles):
-        if len(titles) == 0:
-            return self
-        else:
-            title = titles.pop(0)
-            s = self.search(title)
-            return s.step_down(titles)
+        tl = titles.split('.')
+        t = self
+        for title in tl:
+            t = t.search(title)
+        return t
 
     def search(self, title):
         for t in self.sub_tasks:
@@ -199,31 +200,41 @@ class Task(object):
         ]
         return result
 
-    # def option_list(self):
-    #     s = u"§a搬砖信息列表:§r \n"
-    #     for t in self.sub_tasks:
-    #         s += u"  - §e{title}§r\n".format(title=t.title_with_mark())
-    #     return s
-
     def option_list(self):
-        list = [
-            u'"§a搬砖信息列表:§r"',
-            u'{"text":"[+]","color":"red","clickEvent":{"action":"suggest_command","value":"!!task add "},"hoverEvent":{"action":"show_text","value":{"text":"","extra":[{"text":"点击以快速添加任务"}]}}}',
-        ]
-        template = u'{"text":"{title}\\n","color":"yellow","clickEvent":{"action":"run_command","value":"!!task detail {title}"},"hoverEvent":{"action":"show_text","value":{"text":"","extra":[{"text":"点击以查看任务详情"}]}}}'
+        list = [u'"§a搬砖信息列表:§r"']
+
+        add = json_message(
+            text=u"§c[+]§r",
+            click_action=u"suggest_command",
+            click_value=u"!!task add ",
+            hover_text=u"点击以快速添加子任务",
+        )
+        list.append(add)
+
         for t in self.sub_tasks:
             newline = u'"\\n"'
             list.append(newline)
 
-            dash = u'"- "'
-            list.append(dash)
+            icon = u'§8⬛§r' if t.done else u'⬜'
+            option = u'undone' if t.done else u'done'
+            hover = u'未完成' if t.done else u'完成'
+            title = t.title
+            done = json_message(
+                text=icon,
+                click_action=u"run_command",
+                click_value=u"!!task {} {}".format(option, title),
+                hover_text=u"点击以标记任务为{}".format(hover),
+            )
+            list.append(done)
 
-            title = t.title_with_mark()
-            item = u'{"text":"' \
-                + title \
-                + u'","color":"yellow","clickEvent":{"action":"run_command","value":"!!task detail ' \
-                + t.title \
-                + u'"},"hoverEvent":{"action":"show_text","value":{"text":"","extra":[{"text":"点击以查看任务详情"}]}}}'
+            title = t.title
+            marked_title = t.title_with_mark()
+            item = json_message(
+                text=u" {}".format(marked_title),
+                click_action=u"run_command",
+                click_value=u"!!task detail {}".format(title),
+                hover_text=u"点击以查看任务详情",
+            )
             list.append(item)
 
         s = self.tellraw_from_list(list)
@@ -234,29 +245,42 @@ class Task(object):
         s.replace(u"'", '')
         return s
 
-    # def option_detail(self, titles):
-    #     t = self.step_down(titles)
-    #     return t.detail_inner(ind='')
-
     def option_detail(self, titles):
-        t = self.step_down(titles[:])
+        t = self.step_down(titles)
 
-        details = t.detail_inner(titles, ind='')
+        details = t.detail_inner(titles, ind='', button_add=True)
         return self.tellraw_from_list(details)
 
-    def detail_inner(self, titles=[], ind=''):
+    def detail_inner(self, titles='', ind='', button_add=False):
         if ind:
             list = ['"\\n"']
         else:
             list = []
 
-        title = u'"{ind}- §e{t}§r"'.format(ind=ind, t=self.title_with_mark())
+        list.append('"{}"'.format(ind))
+
+        icon = u'§8⬛§r' if self.done else u'⬜'
+        option = u'undone' if self.done else u'done'
+        hover = u'未完成' if self.done else u'完成'
+        done = json_message(
+            text=icon,
+            click_action=u"run_command",
+            click_value=u"!!task {} {}".format(option, titles),
+            hover_text=u"点击以标记任务为{}".format(hover),
+        )
+        list.append(done)
+
+        marked_title = self.title_with_mark()
+        title = u'" {t}"'.format(t=marked_title)
         list.append(title)
 
-        if titles:
-            # ts = [t.decode('utf-8') for t in titles]
-            add = u'{"text":"[+]","color":"red","clickEvent":{"action":"suggest_command","value":"!!task add {titles}"},"hoverEvent":{"action":"show_text","value":{"text":"","extra":[{"text":"点击以快速添加子任务"}]}}}'
-            add = add.replace('{titles}', '.'.join(titles) + '.')
+        if button_add:
+            add = json_message(
+                text=u"§c[+]§r",
+                click_action=u"suggest_command",
+                click_value=u"!!task add {}.".format(titles),
+                hover_text=u"点击以快速添加子任务",
+            )
             list.append(add)
 
         ind = ind + '  '
@@ -266,33 +290,16 @@ class Task(object):
 
         ind = ind + '  '
         for t in self.sub_tasks:
-            list.extend(t.detail_inner(ind=ind))
+            ts = '.'.join([titles, t.title])
+            list.extend(t.detail_inner(titles=ts, ind=ind))
 
         return list
 
-    # def option_detail_all(self):
-    #     s = ''
-    #     for t in self.sub_tasks:
-    #         s += t.detail_inner(ind='')
-    #     return s
-
-    # def detail_inner(self, ind=''):
-    #     s = u'{ind}- §e{t}§r\n'.format(ind=ind, t=self.title_with_mark())
-    #     ind = ind + '  '
-    #     if self.description:
-    #         s += u'{ind}§7{d}§7\n'.format(ind=ind, d=self.description)
-    #
-    #     ind = ind + '  '
-    #     for t in self.sub_tasks:
-    #         s += t.detail_inner(ind)
-    #
-    #     return s
-
     def title_with_mark(self):
         if self.done:
-            return u"§m{t}§r".format(t=self.title)
+            return u"§8§m{t}§r".format(t=self.title)
         else:
-            return self.title
+            return u"§e{t}§r".format(t=self.title)
 
     @staticmethod
     def from_dict(data):
@@ -306,6 +313,28 @@ class Task(object):
     @staticmethod
     def empty_task():
         return Task('', '')
+
+
+def json_message(text='', click_action='', click_value='', hover_text=''):
+    d = {"text": text}
+
+    if click_action:
+        d["clickEvent"] = {
+            "action": click_action,
+            "value": click_value,
+        }
+
+    if hover_text:
+        d["hoverEvent"] = {
+            "action": "show_text",
+            "value": {
+                "text": hover_text,
+            }
+        }
+
+    return json.dumps(d)
+
+
 
 
 class TaskNotFoundError(Exception):
