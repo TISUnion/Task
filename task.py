@@ -83,7 +83,6 @@ class Executor(object):
                     line = line.encode('utf-8')
                 self.server.tell(self.player, line)
 
-
     def execute(self):
         if self.no_option(self.option):
             self.tell(help_msg)
@@ -141,8 +140,14 @@ class Task(object):
         self.description = ''
         self.sub_tasks = []
 
+    def pop_last_title(self, titles):
+        ts = titles.split('.')
+        title = ts.pop()
+        result = '.'.join(ts)
+        return title, result
+
     def option_add(self, titles, description=''):
-        title = titles.pop()
+        title, titles = self.pop_last_title(titles)
         sub_task = Task(title, description)
 
         t = self.step_down(titles)
@@ -150,9 +155,7 @@ class Task(object):
         return "添加成功"
 
     def option_del(self, titles):
-        ts = titles.split('.')
-        title = ts.pop()
-        titles = '.'.join(ts)
+        title, titles = self.pop_last_title(titles)
 
         t = self.step_down(titles)
         st = t.search(title)
@@ -183,7 +186,8 @@ class Task(object):
         tl = titles.split('.')
         t = self
         for title in tl:
-            t = t.search(title)
+            if title:
+                t = t.search(title)
         return t
 
     def search(self, title):
@@ -333,8 +337,6 @@ def json_message(text='', click_action='', click_value='', hover_text=''):
         }
 
     return json.dumps(d)
-
-
 
 
 class TaskNotFoundError(Exception):
