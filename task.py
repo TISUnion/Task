@@ -114,16 +114,6 @@ class Executor(object):
             msg = "无效命令, 请用 !!task help 获取帮助"
             self.tell(msg)
 
-    # def args_for_invoke(self, args):
-    #     if args:
-    #         title_arg = args[0]
-    #         titles = title_arg.split('.')
-    #         rest_args = args[1:]
-    #         result = [titles] + rest_args
-    #     else:
-    #         result = []
-    #     return result
-
 
 class Task(object):
     def __init__(self, title, description):
