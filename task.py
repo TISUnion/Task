@@ -140,12 +140,6 @@ class Task(object):
         self.description = ''
         self.sub_tasks = []
 
-    def pop_last_title(self, titles):
-        ts = titles.split('.')
-        title = ts.pop()
-        result = '.'.join(ts)
-        return title, result
-
     def option_add(self, titles, description=''):
         title, titles = self.pop_last_title(titles)
         sub_task = Task(title, description)
@@ -181,28 +175,6 @@ class Task(object):
         t = self.step_down(titles)
         t.description = description
         return "已修改任务描述"
-
-    def step_down(self, titles):
-        tl = titles.split('.')
-        t = self
-        for title in tl:
-            if title:
-                t = t.search(title)
-        return t
-
-    def search(self, title):
-        for t in self.sub_tasks:
-            if t.title == title:
-                return t
-        raise TaskNotFoundError(title)
-
-    def to_dict(self):
-        result = self.__dict__.copy()
-        sub_tasks = result['sub_tasks'][:]
-        result['sub_tasks'] = [
-            s.to_dict() for s in sub_tasks
-        ]
-        return result
 
     def option_list(self):
         list = [u'"§a搬砖信息列表:§r"']
@@ -242,11 +214,6 @@ class Task(object):
             list.append(item)
 
         s = self.tellraw_from_list(list)
-        return s
-
-    def tellraw_from_list(self, list):
-        s = u"/tellraw {player} [" + ','.join(list) + u"]"
-        s.replace(u"'", '')
         return s
 
     def option_detail(self, titles):
@@ -304,6 +271,39 @@ class Task(object):
             return u"§8§m{t}§r".format(t=self.title)
         else:
             return u"§e{t}§r".format(t=self.title)
+
+    def tellraw_from_list(self, list):
+        s = u"/tellraw {player} [" + ','.join(list) + u"]"
+        s.replace(u"'", '')
+        return s
+
+    def step_down(self, titles):
+        tl = titles.split('.')
+        t = self
+        for title in tl:
+            if title:
+                t = t.search(title)
+        return t
+
+    def search(self, title):
+        for t in self.sub_tasks:
+            if t.title == title:
+                return t
+        raise TaskNotFoundError(title)
+
+    def pop_last_title(self, titles):
+        ts = titles.split('.')
+        title = ts.pop()
+        result = '.'.join(ts)
+        return title, result
+
+    def to_dict(self):
+        result = self.__dict__.copy()
+        sub_tasks = result['sub_tasks'][:]
+        result['sub_tasks'] = [
+            s.to_dict() for s in sub_tasks
+        ]
+        return result
 
     @staticmethod
     def from_dict(data):
