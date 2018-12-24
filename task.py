@@ -70,6 +70,7 @@ class Executor(object):
             'undone',
             'detail',
             'list',
+            'detail-all',
         ]
 
     def tell(self, message):
@@ -181,6 +182,9 @@ class Task(object):
             newline = u'"\\n"'
             list.append(newline)
 
+            ind = u'"  "'
+            list.append(ind)
+
             icon = u'§8⬛§r' if t.done else u'⬜'
             option = u'undone' if t.done else u'done'
             hover = u'未完成' if t.done else u'完成'
@@ -206,11 +210,19 @@ class Task(object):
         s = self.tellraw_from_list(list)
         return s
 
+    def option_detail_all(self):
+        result = [u'"§a所有任务详细信息:§r"']
+        for t in self.sub_tasks:
+            result.extend(t.detail_inner(t.title, ind='  '))
+        return self.tellraw_from_list(result)
+
     def option_detail(self, titles):
         t = self.step_down(titles)
 
-        details = t.detail_inner(titles, ind='', button_add=True)
-        return self.tellraw_from_list(details)
+        result = [u'"§a任务详细信息:§r"']
+        details = t.detail_inner(titles, ind='  ', button_add=True)
+        result.extend(details)
+        return self.tellraw_from_list(result)
 
     def detail_inner(self, titles='', ind='', button_add=False):
         if ind:
