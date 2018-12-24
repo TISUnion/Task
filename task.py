@@ -132,15 +132,33 @@ class Task(object):
         self.sub_tasks = []
 
     def option_add(self, titles, description=''):
-        title, titles = self.pop_last_title(titles)
+        title, titles = self.pop_title(titles)
         sub_task = Task(title, description)
 
         t = self.step_down(titles)
         t.sub_tasks.append(sub_task)
-        return "添加成功"
+
+        msg = [u'"§a§l添加成功，任务详细信息:§r"']
+
+        if titles:
+            top_title, ts = self.pop_title(titles, 0)
+        else:
+            top_title = title
+
+        add = json_message(
+            text=u"§c[+]§r",
+            click_action=u"suggest_command",
+            click_value=u"!!task add {}.".format(top_title),
+            hover_text=u"点击以快速添加子任务",
+        )
+        msg.append(add)
+
+        top_task = self.search(top_title)
+        msg.extend(top_task.detail_inner(top_title, ind='  '))
+        return self.tellraw_from_list(msg)
 
     def option_del(self, titles):
-        title, titles = self.pop_last_title(titles)
+        title, titles = self.pop_title(titles)
 
         t = self.step_down(titles)
         st = t.search(title)
@@ -257,8 +275,6 @@ class Task(object):
         title = u'" {t}"'.format(t=marked_title)
         list.append(title)
 
-        # if button_add:
-
         ind = ind + '  '
         if self.description:
             list.append(u'"\\n"')
@@ -296,9 +312,9 @@ class Task(object):
                 return t
         raise TaskNotFoundError(title)
 
-    def pop_last_title(self, titles):
+    def pop_title(self, titles, index=-1):
         ts = titles.split('.')
-        title = ts.pop()
+        title = ts.pop(index)
         result = '.'.join(ts)
         return title, result
 
