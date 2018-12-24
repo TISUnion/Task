@@ -168,7 +168,7 @@ class Task(object):
         return "已修改任务描述"
 
     def option_list(self):
-        list = [u'"§a搬砖信息列表:§r"']
+        list = [u'"§a§l搬砖信息列表:§r"']
 
         add = json_message(
             text=u"§c[+]§r",
@@ -211,15 +211,25 @@ class Task(object):
         return s
 
     def option_detail_all(self):
-        result = [u'"§a所有任务详细信息:§r"']
+        result = [u'"§a§l所有任务详细信息:§r"']
         for t in self.sub_tasks:
             result.extend(t.detail_inner(t.title, ind='  '))
+            result.append(u'"\\n"')
         return self.tellraw_from_list(result)
 
     def option_detail(self, titles):
         t = self.step_down(titles)
 
-        result = [u'"§a任务详细信息:§r"']
+        result = [u'"§a§l任务详细信息:§r"']
+
+        add = json_message(
+            text=u"§c[+]§r",
+            click_action=u"suggest_command",
+            click_value=u"!!task add {}.".format(titles),
+            hover_text=u"点击以快速添加子任务",
+        )
+        result.append(add)
+
         details = t.detail_inner(titles, ind='  ', button_add=True)
         result.extend(details)
         return self.tellraw_from_list(result)
@@ -247,14 +257,7 @@ class Task(object):
         title = u'" {t}"'.format(t=marked_title)
         list.append(title)
 
-        if button_add:
-            add = json_message(
-                text=u"§c[+]§r",
-                click_action=u"suggest_command",
-                click_value=u"!!task add {}.".format(titles),
-                hover_text=u"点击以快速添加子任务",
-            )
-            list.append(add)
+        # if button_add:
 
         ind = ind + '  '
         if self.description:
