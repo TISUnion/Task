@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
 
 import json
 import os
 import traceback
 import codecs
 
+import stext as st
 
-help_msg = u'''------MCD TASK插件------
+
+help_msg = '''------MCD TASK插件------
 §a命令帮助如下:§r
 §6!!task help§r 显示帮助信息
 §6!!task list§r 显示任务列表
@@ -28,6 +31,10 @@ help_msg = u'''------MCD TASK插件------
 debug_mode = False
 
 
+class TaskRoot(object):
+    root = None  # type: Task
+
+
 def onServerInfo(server, info):
     if not info.isPlayer:
         return
@@ -37,6 +44,7 @@ def onServerInfo(server, info):
         return
 
     tasks = tasks_from_json_file()
+    TaskRoot.root = tasks
 
     e = Executor(tasks, server, info.player, option, args)
     e.execute()
@@ -47,73 +55,397 @@ def onServerInfo(server, info):
 def parsed_info(content):
     c = content.decode('utf-8')
     tokens = c.split()
+    length = len(tokens)
+
     command = tokens[0]
-    option = tokens[1:2]
-    args = tokens[2:]
+    option = tokens[1] if length >= 2 else None
+    args = tokens[2:] if length >= 3 else []
     return command, option, args
 
 
 class Executor(object):
     def __init__(self, tasks, server, player, option, args):
-        self.tasks = tasks
+        self.tasks = tasks  # type: Task
         self.server = server
         self.player = player
         self.option = option
         self.args = args
 
-        self.options = [
-            'add',
-            'del',
-            'rename',
-            'change',
-            'done',
-            'undone',
-            'detail',
-            'list',
-            'detail-all',
-        ]
-
-    def tell(self, message):
-        for line in message.splitlines():
-            if line.startswith(u'/tellraw'.encode('utf-8')):
-                line = line.replace('{player}', self.player)
-                line = line.encode('utf-8')
-                self.server.execute(line)
-            else:
-                if isinstance(line, unicode):
-                    line = line.encode('utf-8')
-                self.server.tell(self.player, line)
+    def show(self, msg):
+        st.show_to_player(self.server, self.player, msg)
 
     def execute(self):
-        if self.no_option(self.option):
-            self.tell(help_msg)
-        else:
-            self.option = self.option[0]
-            try:
-                self.execute_option()
-            except TaskNotFoundError as e:
-                msg = "未找到任务 §e{t}".format(t=e.title)
-                self.tell(msg)
-            except:
-                # FIXME: empty except for stacktrace echo
-                f = traceback.format_exc()
-                self.tell(f)
-
-    def no_option(self, option):
-        return len(option) == 0
+        try:
+            self.execute_option()
+        except TaskNotFoundError as e:
+            self.task_not_found(e.title)
 
     def execute_option(self):
-        if self.option == 'help':
-            self.tell(help_msg)
-        elif self.option in self.options:
-            method_name = "option_" + self.option.replace('-', '_')
-            method = getattr(self.tasks, method_name)
-            msg = method(*self.args)
-            if msg:
-                self.tell(msg)
+        ops = {
+            None: self.op_help,
+            'help': self.op_help,
+            'add': self.op_add,
+            'detail': self.op_detail,
+            'list': self.op_list,
+            'detail-all': self.op_detail_all,
+            'del': self.op_delete,
+            'rename': self.op_rename,
+            'change': self.op_change_description,
+            'done': self.op_done,
+            'undone': self.op_undone,
+        }
+        if self.option in ops:
+            ops[self.option](*self.args)
         else:
-            msg = "无效命令, 请用 !!task help 获取帮助"
-            self.tell(msg)
+            self.op_invalid()
+
+    def task_not_found(self, title):
+        msg = TaskView.task_not_found(title)
+        self.show(msg)
+
+    def op_invalid(self):
+        msg = st.SText("无效命令, 请用 !!task help 获取帮助")
+        self.show(msg)
+
+    def op_help(self):
+        msg = st.SText(help_msg)
+        self.show(msg)
+
+    def op_add(self, titles, description=''):
+        # type: (unicode, unicode) -> None
+        ts = TitleList(titles)
+        self.tasks.add_task(ts.copy(), description)
+
+        msg = TaskView.task_added(ts.copy())
+        self.show(msg)
+
+    def op_detail(self, titles):
+        # type: (unicode) -> None
+        ts = TitleList(titles)
+        msg = TaskView.task_detail(ts)
+        self.show(msg)
+
+    def op_list(self, dummy=None):
+        # dummy 是为了方便统一调用的假参数
+        msg = TaskView.task_list()
+        self.show(msg)
+
+    def op_detail_all(self, dummy=None):
+        # dummy 是为了方便统一调用的假参数
+        msg = TaskView.task_detail_all()
+        self.show(msg)
+
+    def op_delete(self, titles):
+        # type: (unicode) -> None
+        ts = TitleList(titles)
+        self.tasks.delete_task(ts.copy())
+
+        msg = TaskView.task_deleted(ts.copy())
+        self.show(msg)
+
+    def op_rename(self, titles, new_title):
+        # type: (unicode, unicode) -> None
+        ts = TitleList(titles)
+        self.tasks.rename_task(ts.copy(), new_title)
+
+        msg = TaskView.task_renamed(ts.copy(), new_title)
+        self.show(msg)
+
+    def op_done(self, titles):
+        # type: (unicode) -> None
+        ts = TitleList(titles)
+        self.tasks.done_task(ts.copy())
+
+        msg = TaskView.task_done(ts.copy())
+        self.show(msg)
+
+    def op_undone(self, titles):
+        # type: (unicode) -> None
+        ts = TitleList(titles)
+        self.tasks.undone_task(ts.copy())
+
+        msg = TaskView.task_undone(ts.copy())
+        self.show(msg)
+
+    def op_change_description(self, titles, description=''):
+        # type: (unicode, unicode) -> None
+        ts = TitleList(titles)
+        self.tasks.change_task_description(ts, description)
+
+
+class TaskView(object):
+    @staticmethod
+    def task_not_found(title):
+        # type: (unicode) -> st.STextList
+        m1 = st.SText(text="未找到任务 ")
+        m2 = st.SText(text="{t}".format(t=title), color=st.SColor.yellow)
+        msg = st.STextList(m1, m2)
+        return msg
+
+    @staticmethod
+    def task_added(titles):
+        # type: (TitleList) -> st.STextList
+        title_text = "添加成功，任务详细信息"
+        main_title = TaskView._task_detail_main_title(titles, title_text)
+
+        root_title = titles.peek_head()
+        root_title_list = TitleList(root_title)
+        detail = TaskView._task_detail(root_title_list.copy(), indent=2)
+
+        msg = st.STextList()
+        msg.extend(main_title)
+        msg.extend(detail)
+        return msg
+
+    @staticmethod
+    def task_detail(titles):
+        # type: (TitleList) -> st.STextList
+        title_text = "任务详细信息"
+        main_title = TaskView._task_detail_main_title(titles, title_text)
+
+        root_title = titles.peek_head()
+        root_title_list = TitleList(root_title)
+        detail = TaskView._task_detail(root_title_list.copy(), indent=2)
+
+        msg = st.STextList()
+        msg.extend(main_title)
+        msg.extend(detail)
+        return msg
+
+    @staticmethod
+    def task_list():
+        # type: () -> st.STextList
+        title_text = "搬砖信息列表"
+        titles = TitleList()
+        main_title = TaskView._task_detail_main_title(titles, title_text)
+
+        detail = TaskView._task_list()
+
+        msg = st.STextList()
+        msg.extend(main_title)
+        msg.extend(detail)
+        return msg
+
+    @staticmethod
+    def task_detail_all():
+        # type: () -> st.STextList
+        title_text = "搬砖信息详细信息"
+        titles = TitleList()
+        main_title = TaskView._task_detail_main_title(titles, title_text)
+
+        subs = TaskView._task_detail_sub_tasks(titles, indent=2)
+
+        msg = st.STextList()
+        msg.extend(main_title)
+        msg.extend(subs)
+        return msg
+
+    @staticmethod
+    def task_deleted(titles):
+        space = st.SText.space()
+        m1 = st.SText("任务")
+        task = st.SText(unicode(titles), color=st.SColor.yellow)
+        m2 = st.SText("已删除")
+        msg = st.STextList(m1, space, task, space, m2)
+        return msg
+
+    @staticmethod
+    def task_renamed(titles, new_title):
+        new_titles = titles.copy()
+        new_titles.pop_tail()
+        new_titles.append(new_title)
+
+        space = st.SText.space()
+        m1 = st.SText("任务")
+        old = st.SText(unicode(titles), color=st.SColor.yellow)
+        m2 = st.SText("已更名为")
+        new = st.SText(unicode(new_titles), color=st.SColor.yellow)
+
+        msg = st.STextList(m1, space, old, space, m2, space, new)
+        return msg
+
+    @staticmethod
+    def task_done(titles):
+        space = st.SText.space()
+        m1 = st.SText("任务")
+        old = st.SText(unicode(titles), color=st.SColor.yellow)
+        m2 = st.SText("已被标记为")
+        done = st.SText("完成", color=st.SColor.yellow)
+
+        msg = st.STextList(m1, space, old, space, m2, space, done)
+        return msg
+
+    @staticmethod
+    def task_undone(titles):
+        space = st.SText.space()
+        m1 = st.SText("任务")
+        old = st.SText(unicode(titles), color=st.SColor.yellow)
+        m2 = st.SText("已被标记为")
+        undone = st.SText("未完成", color=st.SColor.yellow)
+
+        msg = st.STextList(m1, space, old, space, m2, space, undone)
+        return msg
+
+    @staticmethod
+    def task_description_changed(titles):
+        space = st.SText.space()
+        m1 = st.SText("任务")
+        old = st.SText(unicode(titles), color=st.SColor.yellow)
+        m2 = st.SText("的描述已修改")
+
+        msg = st.STextList(m1, space, old, space, m2)
+        return msg
+
+    @staticmethod
+    def _task_list():
+        r = st.STextList()
+        root = TaskRoot.root
+        undones, dones = root.split_sub_tasks_by_done()
+        for t in undones:
+            item = TaskView._task_list_item(t)
+            r.extend(item)
+        for t in dones:
+            item = TaskView._task_list_item(t)
+            r.extend(item)
+        return r
+
+    @staticmethod
+    def _task_list_item(task):
+        # type: (Task) -> st.STextList
+        ind = st.SText.indent(2)
+        space = st.SText.space()
+        newline = st.SText.newline()
+
+        t = task
+        ts = TitleList(t.title)
+
+        icon = TaskView._task_detail_icon(ts.copy(), t.done)
+        title = TaskView._task_detail_title(ts.copy(), t.done)
+        r = st.STextList(ind, icon, space, title, newline)
+        return r
+
+    @staticmethod
+    def _task_detail_main_title(titles, title_text):
+        # type: (TitleList, unicode) -> st.STextList
+        main_title = st.SText(
+            title_text,
+            color=st.SColor.green,
+            styles=[st.SStyle.bold]
+        )
+
+        root = titles.peek_head()
+        root_title_list = TitleList(root)
+        add = TaskView.template_add_button(root_title_list.copy())
+
+        msg = st.STextList(main_title, add)
+        msg.append(st.SText.newline())
+        return msg
+
+    @staticmethod
+    def _task_detail(titles, indent=0):
+        # type: (TitleList, int) -> st.STextList
+        ind = st.SText.indent(indent)
+        newline = st.SText.newline()
+        space = st.SText.space()
+
+        task = Task.task_by_title_list(titles)
+        done = task.done
+
+        icon = TaskView._task_detail_icon(titles.copy(), done)
+        title = TaskView._task_detail_title(titles.copy(), done)
+
+        indent += 3
+        desc = TaskView._task_detail_description(task, indent=indent)
+
+        subs = TaskView._task_detail_sub_tasks(titles, indent)
+
+        r = st.STextList()
+        r.append(ind, icon, space, title, newline)
+        r.extend(desc)
+        r.extend(subs)
+        return r
+
+    @staticmethod
+    def _task_detail_icon(titles, done):
+        # type: (TitleList, bool) -> st.SText
+        icon_done = st.SText("⬛", color=st.SColor.darkGray)
+        icon_undone = st.SText("⬜", color=st.SColor.white)
+        icon = icon_done if done else icon_undone
+
+        hover_done = st.SText("将任务标记为未完成")
+        hover_undone = st.SText("将任务标记为完成")
+        hover = hover_done if done else hover_undone
+        icon.hover_text = hover
+
+        option = 'undone' if done else 'done'
+        command = "!!task {} {}".format(option, unicode(titles))
+        icon.set_click_command(command)
+
+        return icon
+
+    @staticmethod
+    def _task_detail_title(titles, done):
+        # type: (TitleList, bool) -> st.SText
+        title = titles.peek_tail()
+        styles = [st.SStyle.strikethrough] if done else None
+        color = st.SColor.darkGray if done else st.SColor.yellow
+        r = st.SText(title, color=color, styles=styles)
+
+        hover = st.SText("点击查看任务详情")
+        r.hover_text = hover
+
+        command = "!!task detail {}".format(unicode(titles))
+        r.set_click_command(command)
+        return r
+
+    @staticmethod
+    def _task_detail_description(task, indent=0):
+        # type: (Task, int) -> st.STextList
+        ind = st.SText.indent(indent)
+        newline = st.SText.newline()
+
+        r = st.STextList()
+        if task.description != '':
+            d = st.SText(task.description, color=st.SColor.gray)
+            r.append(ind, d, newline)
+        return r
+
+    @staticmethod
+    def _task_detail_sub_tasks(titles, indent=0):
+        # type: (TitleList, int) -> st.STextList
+        task = Task.task_by_title_list(titles)
+        undones, dones = task.split_sub_tasks_by_done()
+        r = st.STextList()
+
+        indent += 2
+        for t in undones:
+            ts = titles.copy()
+            ts.append(t.title)
+            sub = TaskView._task_detail(ts, indent=indent)
+            r.extend(sub)
+        for t in dones:
+            ts = titles.copy()
+            ts.append(t.title)
+            sub = TaskView._task_detail(ts, indent=indent)
+            r.extend(sub)
+        return r
+
+    @staticmethod
+    def template_add_button(titles):
+        # type: (TitleList) -> st.SText
+        add = st.SText("[+]", color=st.SColor.red)
+
+        add_hover = st.SText("点击以快速添加子任务")
+        add.hover_text = add_hover
+
+        ts = unicode(titles)
+        if ts != '':
+            suggest = "!!task add {}.".format(unicode(titles))
+        else:
+            suggest = "!!task add "
+        add.set_click_suggest(suggest)
+
+        return add
 
 
 class Task(object):
@@ -131,199 +463,70 @@ class Task(object):
         self.description = ''
         self.sub_tasks = []
 
-    def option_add(self, titles, description=''):
-        title, titles = self.pop_title(titles)
-        sub_task = Task(title, description)
+    def add_task(self, titles, description=''):
+        # type: (TitleList, unicode) -> None
+        new_task_title = titles.pop_tail()
+        new_task = Task(new_task_title, description)
 
-        t = self.step_down(titles)
-        t.sub_tasks.append(sub_task)
+        parent_of_new = self.task_by_title_list(titles)
+        parent_of_new.sub_tasks.append(new_task)
 
-        msg = [u'"§a§l添加成功，任务详细信息:§r"']
-
-        if titles:
-            top_title, ts = self.pop_title(titles, 0)
-        else:
-            top_title = title
-
-        add = json_message(
-            text=u"§c[+]§r",
-            click_action=u"suggest_command",
-            click_value=u"!!task add {}.".format(top_title),
-            hover_text=u"点击以快速添加子任务",
-        )
-        msg.append(add)
-
-        top_task = self.search(top_title)
-        msg.extend(top_task.detail_inner(top_title, ind='  '))
-        return self.tellraw_from_list(msg)
-
-    def option_del(self, titles):
-        title, titles = self.pop_title(titles)
-
-        t = self.step_down(titles)
-        st = t.search(title)
-        t.sub_tasks.remove(st)
-        return "删除成功"
-
-    def option_rename(self, titles, new_name):
-        t = self.step_down(titles)
-        t.name = new_name
-        return "已重命名任务"
-
-    def option_done(self, titles):
-        t = self.step_down(titles)
-        t.done = True
-        return "已标记任务为完成"
-
-    def option_undone(self, titles):
-        t = self.step_down(titles)
-        t.done = False
-        return "已标记任务为未完成"
-
-    def option_change(self, titles, description=''):
-        t = self.step_down(titles)
-        t.description = description
-        return "已修改任务描述"
-
-    def option_list(self):
-        list = [u'"§a§l搬砖信息列表:§r"']
-
-        add = json_message(
-            text=u"§c[+]§r",
-            click_action=u"suggest_command",
-            click_value=u"!!task add ",
-            hover_text=u"点击以快速添加子任务",
-        )
-        list.append(add)
-
-        for t in self.sub_tasks:
-            newline = u'"\\n"'
-            list.append(newline)
-
-            ind = u'"  "'
-            list.append(ind)
-
-            icon = u'§8⬛§r' if t.done else u'⬜'
-            option = u'undone' if t.done else u'done'
-            hover = u'未完成' if t.done else u'完成'
-            title = t.title
-            done = json_message(
-                text=icon,
-                click_action=u"run_command",
-                click_value=u"!!task {} {}".format(option, title),
-                hover_text=u"点击以标记任务为{}".format(hover),
-            )
-            list.append(done)
-
-            title = t.title
-            marked_title = t.title_with_mark()
-            item = json_message(
-                text=u" {}".format(marked_title),
-                click_action=u"run_command",
-                click_value=u"!!task detail {}".format(title),
-                hover_text=u"点击以查看任务详情",
-            )
-            list.append(item)
-
-        s = self.tellraw_from_list(list)
-        return s
-
-    def option_detail_all(self):
-        result = [u'"§a§l所有任务详细信息:§r"']
-        for t in self.sub_tasks:
-            result.extend(t.detail_inner(t.title, ind='  '))
-            result.append(u'"\\n"')
-        return self.tellraw_from_list(result)
-
-    def option_detail(self, titles):
-        t = self.step_down(titles)
-
-        result = [u'"§a§l任务详细信息:§r"']
-
-        add = json_message(
-            text=u"§c[+]§r",
-            click_action=u"suggest_command",
-            click_value=u"!!task add {}.".format(titles),
-            hover_text=u"点击以快速添加子任务",
-        )
-        result.append(add)
-
-        details = t.detail_inner(titles, ind='  ', button_add=True)
-        result.extend(details)
-        return self.tellraw_from_list(result)
-
-    def detail_inner(self, titles='', ind='', button_add=False):
-        if ind:
-            list = ['"\\n"']
-        else:
-            list = []
-
-        list.append('"{}"'.format(ind))
-
-        icon = u'§8⬛§r' if self.done else u'⬜'
-        option = u'undone' if self.done else u'done'
-        hover = u'未完成' if self.done else u'完成'
-        done = json_message(
-            text=icon,
-            click_action=u"run_command",
-            click_value=u"!!task {} {}".format(option, titles),
-            hover_text=u"点击以标记任务为{}".format(hover),
-        )
-        list.append(done)
-
-        marked_title = self.title_with_mark()
-        title = u'" {t}"'.format(t=marked_title)
-        list.append(title)
-
-        ind = ind + '  '
-        if self.description:
-            list.append(u'"\\n"')
-            list.append(u'"{ind}§7{d}§7"'.format(ind=ind, d=self.description))
-
-        ind = ind + '  '
-        for t in self.sub_tasks:
-            ts = '.'.join([titles, t.title])
-            list.extend(t.detail_inner(titles=ts, ind=ind))
-
-        return list
-
-    def title_with_mark(self):
-        if self.done:
-            return u"§8§m{t}§r".format(t=self.title)
-        else:
-            return u"§e{t}§r".format(t=self.title)
-
-    def tellraw_from_list(self, list):
-        s = u"/tellraw {player} [" + ','.join(list) + u"]"
-        s.replace(u"'", '')
-        return s
-
-    def step_down(self, titles):
-        tl = titles.split('.')
-        t = self
-        for title in tl:
-            if title:
-                t = t.search(title)
-        return t
-
-    def search(self, title):
+    def _sub_task_by_title(self, title):
+        # type: (unicode) -> Task
         for t in self.sub_tasks:
             if t.title == title:
                 return t
         raise TaskNotFoundError(title)
 
-    def pop_title(self, titles, index=-1):
-        ts = titles.split('.')
-        title = ts.pop(index)
-        result = '.'.join(ts)
-        return title, result
+    @staticmethod
+    def task_by_title_list(titles):
+        # type: (TitleList) -> Task
+        # 为了简化逻辑，用全局变量保存根
+        root = TaskRoot.root
+        task = root
+        for title in titles.titles:
+            task = task._sub_task_by_title(title)
+        return task
 
-    def to_dict(self):
+    def delete_task(self, titles):
+        # type: (TitleList) -> None
+        title_to_delete = titles.pop_tail()
+        parent_task = Task.task_by_title_list(titles)
+        task = parent_task._sub_task_by_title(title_to_delete)
+        parent_task.sub_tasks.remove(task)
+
+    def rename_task(self, titles, new_title):
+        # type: (TitleList, unicode) -> None
+        task = Task.task_by_title_list(titles)
+        task.title = new_title
+
+    def change_task_description(self, titles, description):
+        # type: (TitleList, unicode) -> None
+        task = Task.task_by_title_list(titles)
+        task.description = description
+
+    def done_task(self, titles):
+        t = Task.task_by_title_list(titles)
+        t.done = True
+
+    def undone_task(self, titles):
+        t = Task.task_by_title_list(titles)
+        t.done = False
+
+    def split_sub_tasks_by_done(self):
+        undones = []
+        dones = []
+        for t in self.sub_tasks:
+            if t.done:
+                dones.append(t)
+            else:
+                undones.append(t)
+        return undones, dones
+
+    def to_json_object(self):
         result = self.__dict__.copy()
         sub_tasks = result['sub_tasks'][:]
-        result['sub_tasks'] = [
-            s.to_dict() for s in sub_tasks
-        ]
+        result['sub_tasks'] = [s.to_json_object() for s in sub_tasks]
         return result
 
     @staticmethod
@@ -340,24 +543,45 @@ class Task(object):
         return Task('', '')
 
 
-def json_message(text='', click_action='', click_value='', hover_text=''):
-    d = {"text": text}
+class TitleList(object):
+    def __init__(self, titles=None):
+        if titles is None:
+            self.titles = []
+        else:
+            self.titles = titles.split('.')  # type: list
 
-    if click_action:
-        d["clickEvent"] = {
-            "action": click_action,
-            "value": click_value,
-        }
+    def pop_head(self):
+        # type: () -> unicode
+        return self.titles.pop(0)
 
-    if hover_text:
-        d["hoverEvent"] = {
-            "action": "show_text",
-            "value": {
-                "text": hover_text,
-            }
-        }
+    def pop_tail(self):
+        # type: () -> unicode
+        return self.titles.pop()
 
-    return json.dumps(d)
+    def peek_head(self):
+        ts = self.titles
+        if len(ts) > 0:
+            return self.titles[0]
+        else:
+            return None
+
+    def peek_tail(self):
+        # type: () -> unicode
+        return self.titles[-1]
+
+    def copy(self):
+        r = TitleList()
+        r.titles = self.titles[:]
+        return r
+
+    def append(self, title):
+        # type: (unicode) -> None
+        self.titles.append(title)
+
+    def __unicode__(self):
+        # type: () -> unicode
+        r = '.'.join(self.titles)
+        return r
 
 
 class TaskNotFoundError(Exception):
@@ -387,7 +611,7 @@ def save_data_as_json_file(data, filename):
 
 def init_tasks_dict():
     tasks = Task.empty_task()
-    return tasks.to_dict()
+    return tasks.to_json_object()
 
 
 def tasks_from_json_file():
@@ -397,4 +621,4 @@ def tasks_from_json_file():
 
 
 def save_tasks(tasks):
-    save_data_as_json_file(tasks.to_dict(), "mc_task.json")
+    save_data_as_json_file(tasks.to_json_object(), "mc_task.json")
