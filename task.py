@@ -266,25 +266,21 @@ class TaskView(object):
 
     @staticmethod
     def task_done(titles):
-        space = st.SText.space()
-        m1 = st.SText("任务")
-        old = st.SText(unicode(titles), color=st.SColor.yellow)
-        m2 = st.SText("已被标记为")
-        done = st.SText("完成", color=st.SColor.yellow)
-
-        msg = st.STextList(m1, space, old, space, m2, space, done)
-        return msg
+        # type: (TitleList) -> st.STextList
+        if len(titles.titles) > 1:
+            top_title = titles.peek_head()
+            return TaskView.task_detail(TitleList(top_title))
+        else:
+            return TaskView.task_list()
 
     @staticmethod
     def task_undone(titles):
-        space = st.SText.space()
-        m1 = st.SText("任务")
-        old = st.SText(unicode(titles), color=st.SColor.yellow)
-        m2 = st.SText("已被标记为")
-        undone = st.SText("未完成", color=st.SColor.yellow)
-
-        msg = st.STextList(m1, space, old, space, m2, space, undone)
-        return msg
+        # type: (TitleList) -> st.STextList
+        if len(titles.titles) > 1:
+            top_title = titles.peek_head()
+            return TaskView.task_detail(TitleList(top_title))
+        else:
+            return TaskView.task_list()
 
     @staticmethod
     def task_description_changed(titles):
@@ -372,9 +368,10 @@ class TaskView(object):
         icon_undone = st.SText("⬜", color=st.SColor.white)
         icon = icon_done if done else icon_undone
 
-        hover_done = st.SText("将任务标记为未完成")
-        hover_undone = st.SText("将任务标记为完成")
-        hover = hover_done if done else hover_undone
+        done_text = "未完成" if done else "完成"
+        hover_prefix = st.SText("将任务标记为")
+        hover_done = st.SText(done_text, st.SColor.yellow)
+        hover = st.STextList(hover_prefix, hover_done)
         icon.hover_text = hover
 
         option = 'undone' if done else 'done'
@@ -391,7 +388,9 @@ class TaskView(object):
         color = st.SColor.darkGray if done else st.SColor.yellow
         r = st.SText(title, color=color, styles=styles)
 
-        hover = st.SText("点击查看任务详情")
+        h1 = st.SText("点击以查看")
+        h2 = st.SText("任务详情", st.SColor.yellow)
+        hover = st.STextList(h1, h2)
         r.hover_text = hover
 
         command = "!!task detail {}".format(unicode(titles))
@@ -435,7 +434,9 @@ class TaskView(object):
         # type: (TitleList) -> st.SText
         add = st.SText("[+]", color=st.SColor.red)
 
-        add_hover = st.SText("点击以快速添加子任务")
+        h1 = st.SText("点击以快速")
+        h2 = st.SText("添加子任务", color=st.SColor.yellow)
+        add_hover = st.STextList(h1, h2)
         add.hover_text = add_hover
 
         ts = unicode(titles)
