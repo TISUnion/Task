@@ -87,12 +87,6 @@ class SText(object):
         self.click_action = SAction.run
         self.click_value = text
 
-    def show_to_player(self, server, player):
-        o = self.to_json_object()
-        message = json.dumps(o)
-        cmd = "/tellraw {} {}".format(player, message)
-        server.execute(cmd)
-
     @staticmethod
     def newline():
         return SText('\n')
@@ -124,12 +118,6 @@ class STextList(object):
     def to_json_object(self):
         r = [t.to_json_object() for t in self.texts]
         return r
-
-    def show_to_player(self, server, player):
-        o = self.to_json_object()
-        message = json.dumps(o)
-        cmd = "/tellraw {} {}".format(player, message)
-        server.execute(cmd)
 
 
 def show_to_player(server, player, stext):

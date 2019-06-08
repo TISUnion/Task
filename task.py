@@ -170,7 +170,10 @@ class Executor(object):
     def op_change_description(self, titles, description=''):
         # type: (unicode, unicode) -> None
         ts = TitleList(titles)
-        self.tasks.change_task_description(ts, description)
+        self.tasks.change_task_description(ts.copy(), description)
+
+        msg = TaskView.task_description_changed(ts.copy())
+        self.show(msg)
 
 
 class TaskView(object):
@@ -186,11 +189,14 @@ class TaskView(object):
     def task_added(titles):
         # type: (TitleList) -> st.STextList
         title_text = "添加成功，任务详细信息"
-        main_title = TaskView._task_detail_main_title(titles, title_text)
+        root_title_list = titles.copy()
+        root_title_list.pop_tail()
+        main_title = TaskView._task_detail_main_title(root_title_list.copy(), title_text)
 
-        root_title = titles.peek_head()
-        root_title_list = TitleList(root_title)
-        detail = TaskView._task_detail(root_title_list.copy(), indent=2)
+        if root_title_list.is_empty():
+            detail = TaskView._task_detail(titles.copy(), indent=2)
+        else:
+            detail = TaskView._task_detail(root_title_list.copy(), indent=2)
 
         msg = st.STextList()
         msg.extend(main_title)
@@ -202,10 +208,7 @@ class TaskView(object):
         # type: (TitleList) -> st.STextList
         title_text = "任务详细信息"
         main_title = TaskView._task_detail_main_title(titles, title_text)
-
-        root_title = titles.peek_head()
-        root_title_list = TitleList(root_title)
-        detail = TaskView._task_detail(root_title_list.copy(), indent=2)
+        detail = TaskView._task_detail(titles, indent=4)
 
         msg = st.STextList()
         msg.extend(main_title)
@@ -218,7 +221,6 @@ class TaskView(object):
         title_text = "搬砖信息列表"
         titles = TitleList()
         main_title = TaskView._task_detail_main_title(titles, title_text)
-
         detail = TaskView._task_list()
 
         msg = st.STextList()
@@ -233,7 +235,7 @@ class TaskView(object):
         titles = TitleList()
         main_title = TaskView._task_detail_main_title(titles, title_text)
 
-        subs = TaskView._task_detail_sub_tasks(titles, indent=2)
+        subs = TaskView._task_detail_sub_tasks(titles, indent=0)
 
         msg = st.STextList()
         msg.extend(main_title)
@@ -255,13 +257,7 @@ class TaskView(object):
         new_titles.pop_tail()
         new_titles.append(new_title)
 
-        space = st.SText.space()
-        m1 = st.SText("任务")
-        old = st.SText(unicode(titles), color=st.SColor.yellow)
-        m2 = st.SText("已更名为")
-        new = st.SText(unicode(new_titles), color=st.SColor.yellow)
-
-        msg = st.STextList(m1, space, old, space, m2, space, new)
+        msg = TaskView.task_detail(new_titles.copy())
         return msg
 
     @staticmethod
@@ -284,12 +280,7 @@ class TaskView(object):
 
     @staticmethod
     def task_description_changed(titles):
-        space = st.SText.space()
-        m1 = st.SText("任务")
-        old = st.SText(unicode(titles), color=st.SColor.yellow)
-        m2 = st.SText("的描述已修改")
-
-        msg = st.STextList(m1, space, old, space, m2)
+        msg = TaskView.task_detail(titles.copy())
         return msg
 
     @staticmethod
@@ -297,27 +288,15 @@ class TaskView(object):
         r = st.STextList()
         root = TaskRoot.root
         undones, dones = root.split_sub_tasks_by_done()
-        for t in undones:
-            item = TaskView._task_list_item(t)
+        # 逆序输出，最后创建的在最上面
+        for t in reversed(undones):
+            ts = TitleList(t.title)
+            item = TaskView._task_detail_title(ts, indent=4)
             r.extend(item)
-        for t in dones:
-            item = TaskView._task_list_item(t)
+        for t in reversed(dones):
+            ts = TitleList(t.title)
+            item = TaskView._task_detail_title(ts, indent=4)
             r.extend(item)
-        return r
-
-    @staticmethod
-    def _task_list_item(task):
-        # type: (Task) -> st.STextList
-        ind = st.SText.indent(2)
-        space = st.SText.space()
-        newline = st.SText.newline()
-
-        t = task
-        ts = TitleList(t.title)
-
-        icon = TaskView._task_detail_icon(ts.copy(), t.done)
-        title = TaskView._task_detail_title(ts.copy(), t.done)
-        r = st.STextList(ind, icon, space, title, newline)
         return r
 
     @staticmethod
@@ -328,10 +307,7 @@ class TaskView(object):
             color=st.SColor.green,
             styles=[st.SStyle.bold]
         )
-
-        root = titles.peek_head()
-        root_title_list = TitleList(root)
-        add = TaskView.template_add_button(root_title_list.copy())
+        add = TaskView._task_detail_button_add(titles.copy())
 
         msg = st.STextList(main_title, add)
         msg.append(st.SText.newline())
@@ -339,30 +315,70 @@ class TaskView(object):
 
     @staticmethod
     def _task_detail(titles, indent=0):
-        # type: (TitleList, int) -> st.STextList
-        ind = st.SText.indent(indent)
-        newline = st.SText.newline()
-        space = st.SText.space()
-
-        task = Task.task_by_title_list(titles)
-        done = task.done
-
-        icon = TaskView._task_detail_icon(titles.copy(), done)
-        title = TaskView._task_detail_title(titles.copy(), done)
-
-        indent += 3
-        desc = TaskView._task_detail_description(task, indent=indent)
-
-        subs = TaskView._task_detail_sub_tasks(titles, indent)
+        detail_top = TaskView._task_detail_top_task(titles, indent=indent)
+        detail_subs = TaskView._task_detail_sub_tasks(titles, indent=indent)
 
         r = st.STextList()
-        r.append(ind, icon, space, title, newline)
-        r.extend(desc)
+        r.extend(detail_top)
+        r.extend(detail_subs)
+        return r
+
+    @staticmethod
+    def _task_detail_sub(titles, indent=0):
+        # type: (TitleList, int) -> st.STextList
+        title = TaskView._task_detail_title(titles.copy(), indent=indent)
+        subs = TaskView._task_detail_sub_tasks(titles.copy(), indent)
+
+        r = st.STextList()
+        r.extend(title)
         r.extend(subs)
         return r
 
     @staticmethod
-    def _task_detail_icon(titles, done):
+    def _task_detail_top_task(titles, indent=4):
+        # type: (TitleList, int) -> st.STextList
+        ts = titles
+        t = Task.task_by_title_list(ts)
+
+        title = TaskView._task_detail_title(
+            ts,
+            indent=indent,
+            button_show_desc=False,
+            button_edit_title=True,
+        )
+        desc = TaskView._task_detail_description(ts, indent=indent+3)
+
+        r = st.STextList()
+        r.extend(title)
+        r.extend(desc)
+        return r
+
+    @staticmethod
+    def _task_detail_title(titles, indent=0, button_show_desc=True, button_edit_title=False):
+        # type: (TitleList, int, bool, bool) -> st.STextList
+        ind = st.SText.indent(indent)
+        space = st.SText.space()
+        newline = st.SText.newline()
+
+        t = Task.task_by_title_list(titles)
+        ts = titles
+
+        icon = TaskView._task_detail_icon_done(ts.copy(), t.done)
+        title = TaskView._task_detail_title_text(ts.copy(), t.done)
+
+        show_desc = st.SText()
+        if t.description != '' and button_show_desc:
+            show_desc = TaskView._task_detail_button_show_description(ts.copy())
+
+        edit_title = st.SText()
+        if button_edit_title:
+            edit_title = TaskView._task_detail_icon_edit_title(ts.copy())
+
+        r = st.STextList(ind, icon, space, title, space, show_desc, edit_title, newline)
+        return r
+
+    @staticmethod
+    def _task_detail_icon_done(titles, done):
         # type: (TitleList, bool) -> st.SText
         icon_done = st.SText("⬛", color=st.SColor.darkGray)
         icon_undone = st.SText("⬜", color=st.SColor.white)
@@ -381,7 +397,33 @@ class TaskView(object):
         return icon
 
     @staticmethod
-    def _task_detail_title(titles, done):
+    def _task_detail_icon_edit_title(titles):
+        # type: (TitleList) -> st.SText
+        icon = st.SText("✎", color=st.SColor.white)
+
+        hover = st.SText("修改任务标题")
+        icon.hover_text = hover
+
+        suggest = "!!task rename {} ".format(unicode(titles))
+        icon.set_click_suggest(suggest)
+
+        return icon
+
+    @staticmethod
+    def _task_detail_icon_edit_desc(titles):
+        # type: (TitleList) -> st.SText
+        icon = st.SText("✎", color=st.SColor.white)
+
+        hover = st.SText("修改任务描述")
+        icon.hover_text = hover
+
+        suggest = "!!task change {} ".format(unicode(titles))
+        icon.set_click_suggest(suggest)
+
+        return icon
+
+    @staticmethod
+    def _task_detail_title_text(titles, done):
         # type: (TitleList, bool) -> st.SText
         title = titles.peek_tail()
         styles = [st.SStyle.strikethrough] if done else None
@@ -398,15 +440,19 @@ class TaskView(object):
         return r
 
     @staticmethod
-    def _task_detail_description(task, indent=0):
-        # type: (Task, int) -> st.STextList
+    def _task_detail_description(titles, indent=0):
+        # type: (TitleList, int) -> st.STextList
         ind = st.SText.indent(indent)
+        space = st.SText.space()
         newline = st.SText.newline()
+
+        task = Task.task_by_title_list(titles.copy())
 
         r = st.STextList()
         if task.description != '':
             d = st.SText(task.description, color=st.SColor.gray)
-            r.append(ind, d, newline)
+            edit = TaskView._task_detail_icon_edit_desc(titles)
+            r.append(ind, d, space, edit, newline)
         return r
 
     @staticmethod
@@ -416,21 +462,22 @@ class TaskView(object):
         undones, dones = task.split_sub_tasks_by_done()
         r = st.STextList()
 
-        indent += 2
-        for t in undones:
+        indent += 4
+        # 逆序输出，最后创建的在最上面
+        for t in reversed(undones):
             ts = titles.copy()
             ts.append(t.title)
-            sub = TaskView._task_detail(ts, indent=indent)
+            sub = TaskView._task_detail_sub(ts, indent=indent)
             r.extend(sub)
-        for t in dones:
+        for t in reversed(dones):
             ts = titles.copy()
             ts.append(t.title)
-            sub = TaskView._task_detail(ts, indent=indent)
+            sub = TaskView._task_detail_sub(ts, indent=indent)
             r.extend(sub)
         return r
 
     @staticmethod
-    def template_add_button(titles):
+    def _task_detail_button_add(titles):
         # type: (TitleList) -> st.SText
         add = st.SText("[+]", color=st.SColor.red)
 
@@ -447,6 +494,21 @@ class TaskView(object):
         add.set_click_suggest(suggest)
 
         return add
+
+    @staticmethod
+    def _task_detail_button_show_description(titles):
+        # type: (TitleList) -> st.SText
+        show = st.SText("[…]", color=st.SColor.white)
+
+        h1 = st.SText("点击以查看")
+        h2 = st.SText("任务描述", color=st.SColor.yellow)
+        add_hover = st.STextList(h1, h2)
+        show.hover_text = add_hover
+
+        command = "!!task detail {}".format(unicode(titles))
+        show.set_click_command(command)
+
+        return show
 
 
 class Task(object):
@@ -578,6 +640,9 @@ class TitleList(object):
     def append(self, title):
         # type: (unicode) -> None
         self.titles.append(title)
+
+    def is_empty(self):
+        return len(self.titles) == 0
 
     def __unicode__(self):
         # type: () -> unicode
