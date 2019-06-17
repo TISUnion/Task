@@ -7,7 +7,7 @@ import os
 import traceback
 import codecs
 
-import stext as st
+import plugins.stext as st
 
 
 help_msg = '''------MCD TASK插件------
