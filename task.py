@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import json
 import os
-import traceback
 import codecs
 
 import plugins.stext as st
@@ -82,7 +81,7 @@ class Executor(object):
 
     def execute_option(self):
         ops = {
-            None: self.op_help,
+            None: self.op_list,
             'help': self.op_help,
             'add': self.op_add,
             'detail': self.op_detail,
@@ -93,6 +92,7 @@ class Executor(object):
             'change': self.op_change_description,
             'done': self.op_done,
             'undone': self.op_undone,
+            'list-done': self.op_list_done,
         }
         if self.option in ops:
             ops[self.option](*self.args)
@@ -175,6 +175,10 @@ class Executor(object):
         msg = TaskView.task_description_changed(ts.copy())
         self.show(msg)
 
+    def op_list_done(self, dummy=None):
+        msg = TaskView.task_list_done()
+        self.show(msg)
+
 
 class TaskView(object):
     @staticmethod
@@ -221,7 +225,22 @@ class TaskView(object):
         title_text = "搬砖信息列表"
         titles = TitleList()
         main_title = TaskView._task_detail_main_title(titles, title_text)
-        detail = TaskView._task_list()
+        detail = TaskView._task_list_undone()
+        more_button = TaskView._task_list_show_undone()
+
+        msg = st.STextList()
+        msg.extend(main_title)
+        msg.extend(detail)
+        msg.extend(more_button)
+        return msg
+
+    @staticmethod
+    def task_list_done():
+        # type: () -> st.STextList
+        title_text = "已完成任务列表"
+        titles = TitleList()
+        main_title = TaskView._task_detail_main_title(titles, title_text)
+        detail = TaskView._task_list_done()
 
         msg = st.STextList()
         msg.extend(main_title)
@@ -297,6 +316,49 @@ class TaskView(object):
             ts = TitleList(t.title)
             item = TaskView._task_detail_title(ts, indent=4)
             r.extend(item)
+        return r
+
+    @staticmethod
+    def _task_list_undone():
+        r = st.STextList()
+        root = TaskRoot.root
+        undones, dones = root.split_sub_tasks_by_done()
+
+        for t in reversed(undones):
+            ts = TitleList(t.title)
+            item = TaskView._task_detail_title(ts, indent=4)
+            r.extend(item)
+        return r
+
+    @staticmethod
+    def _task_list_done():
+        r = st.STextList()
+        root = TaskRoot.root
+        undones, dones = root.split_sub_tasks_by_done()
+
+        for t in reversed(dones):
+            ts = TitleList(t.title)
+            item = TaskView._task_detail_title(ts, indent=4)
+            r.extend(item)
+        return r
+
+    @staticmethod
+    def _task_list_show_undone():
+        ind = st.SText.indent(4)
+        newline = st.SText.newline()
+
+        text = "[已完成任务...]"
+        msg = st.SText(text, color=st.SColor.darkGray)
+
+        hover_text = "点击以查看已完成任务"
+        hover = st.SText(hover_text)
+        msg.hover_text = hover
+
+        command = "!!task list-done"
+        msg.set_click_command(command)
+
+        r = st.STextList()
+        r.append(ind, msg, newline)
         return r
 
     @staticmethod
