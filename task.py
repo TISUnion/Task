@@ -63,6 +63,10 @@ def on_info(server, info):
     onServerInfo(server, info2)
 
 
+def on_load(server, old):
+    server.add_help_message('!!task', '工程任务进度管理')
+
+
 def parsed_info(content):
     try:
         c = content.decode('utf-8')
