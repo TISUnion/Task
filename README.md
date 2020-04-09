@@ -2,6 +2,8 @@
 
 A plugin shows tasks of project in progress
 
+[stext](https://github.com/TISUnion/stext) is needed
+
 ### Usage
 
 `!!task help` 显示帮助信息
