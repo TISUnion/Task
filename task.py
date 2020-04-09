@@ -5,8 +5,14 @@ from __future__ import unicode_literals
 import json
 import os
 import codecs
+import sys
+import copy
 
-import plugins.stext as st
+sys.path.append('plugins/')
+import stext as st
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 help_msg = '''------MCD TASK插件------
@@ -51,8 +57,17 @@ def onServerInfo(server, info):
     save_tasks(tasks)
 
 
+def on_info(server, info):
+    info2 = copy.deepcopy(info)
+    info2.isPlayer = info2.is_player
+    onServerInfo(server, info2)
+
+
 def parsed_info(content):
-    c = content.decode('utf-8')
+    try:
+        c = content.decode('utf-8')
+    except:
+        c = content
     tokens = c.split()
     length = len(tokens)
 
@@ -550,7 +565,7 @@ class TaskView(object):
 
         ts = unicode(titles)
         if ts != '':
-            suggest = "!!task add {}.".format(unicode(titles))
+            suggest = "!!task add {}.".format(ts)
         else:
             suggest = "!!task add "
         add.set_click_suggest(suggest)
@@ -710,6 +725,10 @@ class TitleList(object):
         # type: () -> unicode
         r = '.'.join(self.titles)
         return r
+
+    def __str__(self):
+        # type: () -> unicode
+        return self.__unicode__()
 
 
 class TaskNotFoundError(Exception):
