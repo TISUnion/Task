@@ -14,7 +14,7 @@ import stext as st
 if sys.version_info.major == 3:
     unicode = str
 
-
+FILE_PATH = "./plugins/task/mc_task.json"
 help_msg = '''------MCD TASK插件------
 §a命令帮助如下:§r
 §6!!task help§r 显示帮助信息
@@ -767,9 +767,9 @@ def init_tasks_dict():
 
 def tasks_from_json_file():
     init_value = init_tasks_dict()
-    task_dict = data_from_json_file("mc_task.json", init_value)
+    task_dict = data_from_json_file(FILE_PATH, init_value)
     return Task.from_dict(task_dict)
 
 
 def save_tasks(tasks):
-    save_data_as_json_file(tasks.to_json_object(), "mc_task.json")
+    save_data_as_json_file(tasks.to_json_object(), FILE_PATH)
