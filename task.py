@@ -5,10 +5,16 @@ from __future__ import unicode_literals
 import json
 import os
 import codecs
+import sys
+import copy
 
-import plugins.stext as st
+sys.path.append('plugins/')
+import stext as st
 
+if sys.version_info.major == 3:
+    unicode = str
 
+FILE_PATH = "./plugins/task/mc_task.json"
 help_msg = '''------MCD TASK插件------
 §a命令帮助如下:§r
 §6!!task help§r 显示帮助信息
@@ -51,8 +57,21 @@ def onServerInfo(server, info):
     save_tasks(tasks)
 
 
+def on_info(server, info):
+    info2 = copy.deepcopy(info)
+    info2.isPlayer = info2.is_player
+    onServerInfo(server, info2)
+
+
+def on_load(server, old):
+    server.add_help_message('!!task', '工程任务进度管理')
+
+
 def parsed_info(content):
-    c = content.decode('utf-8')
+    try:
+        c = content.decode('utf-8')
+    except:
+        c = content
     tokens = c.split()
     length = len(tokens)
 
@@ -550,7 +569,7 @@ class TaskView(object):
 
         ts = unicode(titles)
         if ts != '':
-            suggest = "!!task add {}.".format(unicode(titles))
+            suggest = "!!task add {}.".format(ts)
         else:
             suggest = "!!task add "
         add.set_click_suggest(suggest)
@@ -711,6 +730,10 @@ class TitleList(object):
         r = '.'.join(self.titles)
         return r
 
+    def __str__(self):
+        # type: () -> unicode
+        return self.__unicode__()
+
 
 class TaskNotFoundError(Exception):
     def __init__(self, title):
@@ -744,9 +767,9 @@ def init_tasks_dict():
 
 def tasks_from_json_file():
     init_value = init_tasks_dict()
-    task_dict = data_from_json_file("mc_task.json", init_value)
+    task_dict = data_from_json_file(FILE_PATH, init_value)
     return Task.from_dict(task_dict)
 
 
 def save_tasks(tasks):
-    save_data_as_json_file(tasks.to_json_object(), "mc_task.json")
+    save_data_as_json_file(tasks.to_json_object(), FILE_PATH)
