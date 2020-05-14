@@ -741,6 +741,8 @@ class TaskNotFoundError(Exception):
 
 
 def init_json_file(filename, init_value):
+    if not os.path.isdir(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
     with codecs.open(filename, "w", encoding='utf-8') as f:
         s = json.dumps(init_value, indent=4)
         f.write(s)
