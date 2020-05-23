@@ -130,10 +130,21 @@ class Executor(object):
         msg = st.SText(help_msg)
         self.show(msg)
 
-    def op_add(self, titles, description=''):
+    def op_add(self, titles='', *description):
         # type: (unicode, unicode) -> None
         ts = TitleList(titles)
-        self.tasks.add_task(ts.copy(), description)
+        # title为空退出方法
+        if titles == "":
+            return
+        
+        if len(description) == 0:
+            description = ['']
+        description_merged = ""
+        for desc in description:
+            description_merged += desc + " "
+        #剔除最后一个多余的空格
+        description_merged = description_merged[0:len(description_merged) - 1]
+        self.tasks.add_task(ts.copy(), description_merged)
 
         msg = TaskView.task_added(ts.copy())
         self.show(msg)
@@ -186,10 +197,21 @@ class Executor(object):
         msg = TaskView.task_undone(ts.copy())
         self.show(msg)
 
-    def op_change_description(self, titles, description=''):
+    def op_change_description(self, titles="", *description):
         # type: (unicode, unicode) -> None
         ts = TitleList(titles)
-        self.tasks.change_task_description(ts.copy(), description)
+        # title为空退出方法
+        if titles == "":
+            return
+        
+        if len(description) == 0:
+            description = ['']
+        description_merged = ""
+        for desc in description:
+            description_merged += desc + " "
+        #剔除最后一个多余的空格
+        description_merged = description_merged[0:len(description_merged) - 1]
+        self.tasks.change_task_description(ts.copy(), description_merged)
 
         msg = TaskView.task_description_changed(ts.copy())
         self.show(msg)
