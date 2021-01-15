@@ -2,17 +2,25 @@
 
 from __future__ import unicode_literals
 
+import codecs
 import json
 import os
-import codecs
 import sys
-import copy
 
 sys.path.append('plugins/')
 import stext as st
 
 if sys.version_info.major == 3:
     unicode = str
+
+
+PLUGIN_METADATA = {
+    'id': 'mcd_task',
+    'version': '1.0.0',
+    'name': 'Task',
+    'author': 'Pandaria',
+    'link': 'https://github.com/TISUnion/Task'
+}
 
 FILE_PATH = "./plugins/task/mc_task.json"
 help_msg = '''------MCD TASK插件------
@@ -40,13 +48,14 @@ class TaskRoot(object):
     root = None  # type: Task
 
 
-def onServerInfo(server, info):
-    if not info.isPlayer:
+def on_info(server, info):
+    if not info.is_player:
         return
 
     command, option, args = parsed_info(info.content)
     if command != '!!task':
         return
+    info.cancel_send_to_server()
 
     tasks = tasks_from_json_file()
     TaskRoot.root = tasks
@@ -57,14 +66,8 @@ def onServerInfo(server, info):
     save_tasks(tasks)
 
 
-def on_info(server, info):
-    info2 = copy.deepcopy(info)
-    info2.isPlayer = info2.is_player
-    onServerInfo(server, info2)
-
-
 def on_load(server, old):
-    server.add_help_message('!!task', '工程任务进度管理')
+    server.register_help_message('!!task', '工程任务进度管理')
 
 
 def parsed_info(content):

@@ -5,6 +5,12 @@ from __future__ import unicode_literals
 import json
 
 
+PLUGIN_METADATA = {
+    'id': 'stext',
+    'version': '1.0.0',
+}
+
+
 class SColor(object):
     black = "black"
     darkBlue = "dark_blue"
