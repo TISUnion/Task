@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import codecs
 import json
 import os
+import shutil
 import sys
 
 sys.path.append('plugins/')
@@ -22,7 +23,8 @@ PLUGIN_METADATA = {
     'link': 'https://github.com/TISUnion/Task'
 }
 
-FILE_PATH = "./plugins/task/mc_task.json"
+FILE_PATH = "./config/task/mc_task.json"
+FILE_PATH_PREV = "./plugins/task/mc_task.json"
 help_msg = '''------MCD TASK插件------
 §a命令帮助如下:§r
 §6!!task help§r 显示帮助信息
@@ -772,6 +774,10 @@ def init_tasks_dict():
 
 def tasks_from_json_file():
     init_value = init_tasks_dict()
+    if os.path.isfile(FILE_PATH_PREV):
+        print('[{}] Migrating data file'.format(PLUGIN_METADATA['name']))
+        init_value = data_from_json_file(FILE_PATH_PREV, init_value)
+        shutil.rmtree(os.path.dirname(FILE_PATH_PREV))
     task_dict = data_from_json_file(FILE_PATH, init_value)
     return Task.from_dict(task_dict)
 
