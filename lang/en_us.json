@@ -35,5 +35,13 @@
     "mcd_task.show_desc_hover": "Click here to browse description",
     "mcd_task.new_task_created": "New task created:",
     "mcd_task.detailed_info_task_title": "Task detailed information list:",
-    "mcd_task.deleted_task": "Deleted task {}"
+    "mcd_task.deleted_task": "Deleted task {}",
+    "mcd_task.illegal_title_with_dot": "Invalid title: can't include dot",
+    "mcd_task.done_task_list_title": "Finished task lists:",
+    "mcd_task.on_player_joined": "You have {} outdated tasks, please hurry up!",
+    "mcd_task.on_player_renamed": "Detected your nickname changed, inherited {} tasks",
+    "mcd_task.list_responsible_title": "This task has following responsibles:",
+    "mcd_task.removed_responsibles_title": "Removed {} responsibles:",
+    "mcd_task.added_responsibles_title": "Added {} responsibles:",
+    "mcd_task.illegal_call": "This command without argument can only be called as player"
 }

@@ -1,6 +1,6 @@
 import json
 
-from typing import Optional, Dict, List, Union, Tuple, Any, TYPE_CHECKING
+from typing import Optional, Dict, List, Union, Tuple, Any, TYPE_CHECKING, Set
 
 from mcd_task.globals import *
 
@@ -8,123 +8,75 @@ if TYPE_CHECKING:
     from mcdreforged.api.types import MCDReforgedLogger
 
 
-
 class ResponsibleManager:
     def __init__(self):
         self.path = RESG_PATH   # type: str
-        self.groups = []        # type: List[ResponsibleGroup]
-        self.player_work = {}   # type: Dict[str, List[str]]
+        self.player_work = {}   # type: Dict[str, Set[str]]
 
-    def rename(self, title: str, new_title: str) -> None:
-        target = self[title]
-        target.title = new_title
-        self.save()
+    def rename_player(self, old_name: str, new_name: str, should_save=True):
+        value = self.player_work.pop(old_name)
+        self.player_work[new_name] = value
+        if should_save:
+            self.save()
+        return value
 
-    def new(self, *args) -> str:
-        title = self.__get_default_title()
-        self.groups.append(ResponsibleGroup(
-           title, *args
-        ))
-        self.save()
-        return title
+    def rename_task(self, old_title: Union['TitleList', str],
+                    new_title: Union['TitleList', str], should_save=True) -> None:
+        old_title, new_title = str(old_title), str(new_title)
+        for value in self.player_work.values():
+            if old_title in value:
+                value.remove(old_title)
+                value.add(new_title)
+        if should_save:
+            self.save()
 
-    def add_work(self, name: str, task_title: Union[TitleList, str]) -> None:
-        res = self.get_actual_title(name)
-        if isinstance(res, ResponsibleGroup):
-            res.add_work(str(task_title))
+    def remove_task(self, task_title: Union['TitleList', str], should_save=True) -> None:
+        task_title = str(task_title)
+        for value in self.player_work.values():
+            if task_title in value:
+                value.remove(task_title)
+        if should_save:
+            self.save()
+
+    def add_work(self, player: str, task_title: Union['TitleList', str], should_save=True) -> None:
+        task_title = str(task_title)
+        if player not in self.player_work.keys():
+            self.player_work[player] = set()
+        if task_title not in self.player_work[player]:
+            self.player_work[player].add(task_title)
         else:
-            if res in self.player_work.keys():
-                self.player_work[res].append(task_title)
-            else:
-                self.player_work[res] = [task_title]
+            raise DuplicatedSameTask(task_title + " duplicated")
+        if should_save:
+            self.save()
 
-    def rm_work(self, name: str, task_title: Union[TitleList, str]) -> None:
-        res = self.get_actual_title(name)
-        if isinstance(res, ResponsibleGroup):
-            res.rm_work(str(task_title))
-        else:
-            if res in self.player_work.keys():
-                self.player_work[res].remove(task_title)
-            else:
-                if isinstance(task_title, str):
-                    task_title = TitleList(task_title)
-                raise TaskNotFoundError(task_title)
-
-    def exist(self, title) -> bool:
-        return self[title] is not None
-
-    def __get_default_title(self) -> str:
-        ret = None
-        num = 0
-        while not ret:
-            num += 1
-            title = 'group_{}'.format(str(num))
-            if not self.exist(title):
-                ret = title
-        return ret
+    def rm_work(self, player: str, task_title: Union['TitleList', str], should_save=True) -> None:
+        task_title = str(task_title)
+        if player not in self.player_work.keys():
+            self.player_work[player] = set()
+        if task_title not in self.player_work[player]:
+            raise TaskNotFoundError(TitleList(task_title))
+        self.player_work[player].remove(task_title)
+        if should_save:
+            self.save()
 
     def save(self) -> None:
-        gr = []
-        for item in self.groups:
-            gr.append(item.dict)
-        js = {
-            "players": self.player_work,
-            "groups": gr
-        }
         with open(self.path, 'w', encoding='UTF-8') as f:
-            json.dump(js, f, indent=4, ensure_ascii=False)
+            json.dump(self.player_work, f, indent=4, ensure_ascii=False)
 
     def load(self) -> None:
-        if not os.path.isfile(self.path):
-            with open(self.path, 'w', encoding='UTF-8') as f:
-                json.dump({"players": {}, "groups": []}, f)
-        with open(self.path, 'w', encoding='UTF-8') as f:
-            js = json.load(f)
-        self.groups = []
-        self.player_work = js["players"]
-        for item in js["groups"]:
-            group = ResponsibleGroup.from_dict(item)
-            if not self.exist(group.title):
-                self.groups.append(group)
+        with open(self.path, 'r', encoding='UTF-8') as f:
+            self.player_work = json.load(f)
 
-    def get_player_group_titles(self, player: str) -> List[str]:
-        ret = []
-        for g in self.groups:
-            if player in g.players:
-                ret.append(g.title)
-        return ret
+    def get_responsibles(self, task_title: Union['TitleList', str]):
+        task_title = str(task_title)
+        ret = set()
+        for key, value in self.player_work.items():
+            if task_title in value:
+                ret = ret.add(key)
+        return list(ret)
 
-    def get_player_tasks(self, player: str) -> Optional[List[str]]:
-        return self.player_work.get(player)
-
-    def get_actual_title(self, formatted_title: Union[ResponsibleGroup, str]) -> Union[ResponsibleGroup, str]:
-        # ResponsibleGroup
-        if isinstance(formatted_title, ResponsibleGroup):
-            if formatted_title not in self.groups:
-                return formatted_title.title
-            else:
-                return formatted_title
-        # str
-        psd = parse(RESG_FORMAT, formatted_title)
-        if psd:
-            return self[psd["title"]]
-        return formatted_title
-
-    def get_responsibles(self, titles: Union[TitleList, str]):
-        resp, resg = [], []
-        for player, task in self.player_work.items():
-            if str(task) == str(titles):
-                resp.append(player)
-        for gr in self.groups:
-            if gr.has_task(titles):
-                resg.append(gr)
-        return resp, resg
-
-    def __getitem__(self, title: str) -> Optional[ResponsibleGroup]:
-        for g in self.groups:
-            if g.title == title:
-                return g
-        return None
+    def __getitem__(self, player: str) -> Set[str]:
+        return self.player_work.get(player, set())
 
 
 class TitleList:
@@ -331,9 +283,14 @@ class TaskManager(TaskBase):
         father_delete = self[titles]
         task = father_delete.child_map[title_to_del]
         father_delete.sub_tasks.remove(task)
+        self.__responsible_manager.remove_task(titles)
 
     def rename_task(self, titles: 'TitleList', new_title: str) -> None:
         self[titles].title = new_title
+        new_titles = titles.copy()
+        new_titles.pop_tail()
+        new_titles.append(new_title)
+        self.__responsible_manager.rename_task(titles, new_title)
 
     def edit_desc(self, titles: 'TitleList', new_desc: str) -> None:
         self[titles].description = new_desc
@@ -356,12 +313,27 @@ class TaskManager(TaskBase):
         self.create_sub_tasks_from_dict(js["sub_tasks"])
 
     def set_responsible(self, titles: TitleList, *res):
+        num = 0
         for r in res:
-            self.__responsible_manager.add_work(r, titles)
+            try:
+                self.__responsible_manager.add_work(r, titles, should_save=False)
+            except DuplicatedSameTask:
+                pass
+            else:
+                num += 1
+        self.__responsible_manager.save()
 
     def rm_responsible(self, titles: TitleList, *res):
+        num = 0
         for r in res:
-            self.__responsible_manager.rm_work(r, titles)
+            try:
+                self.__responsible_manager.rm_work(r, titles, should_save=False)
+            except TaskNotFoundError:
+                pass
+            else:
+                num += 1
+        self.__responsible_manager.save()
+        return num
 
     def set_perm(self, titles: TitleList, perm_level: int) -> None:
         if perm_level in [0, 1, 2, 3, 4]:
@@ -371,6 +343,10 @@ class TaskManager(TaskBase):
 class TaskNotFoundError(Exception):
     def __init__(self, titles: TitleList) -> None:
         self.titles = titles
+
+
+class DuplicatedSameTask(Exception):
+    pass
 
 
 class IllegalTaskName(Exception):

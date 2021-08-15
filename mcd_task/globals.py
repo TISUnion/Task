@@ -27,7 +27,7 @@ TASK_PATH = os.path.join(DATA_FOLDER, "mc_task.json")
 # Task path for old version of this plugin
 TASK_PATH_PREV = "./plugins/task/mc_task.json"
 # Responsible Group file path
-RESG_PATH = os.path.join(DATA_FOLDER, "player_group.json")
+RESG_PATH = os.path.join(DATA_FOLDER, "responsible.json")
 # Log file path
 LOG_PATH = os.path.join(DATA_FOLDER, "logs", "task.log")
 
@@ -36,6 +36,9 @@ DEBUG_MODE = False
 
 # Supported languages
 LANGUAGES = ["en_us", "zh_cn"]
+
+# Player change name info format
+PLAYER_RENAMED = "{new_name} (formerly known as {old_name}) joined the game"
 
 # |=================================|
 # |   Global varibles and methods   |

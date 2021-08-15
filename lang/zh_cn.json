@@ -38,5 +38,11 @@
     "mcd_task.detailed_info_task_title": "搬砖详细信息列表:",
     "mcd_task.deleted_task": "任务 {} 已删除",
     "mcd_task.illegal_title_with_dot": "名称无效: 包含小数点",
-    "mcd_task.done_task_list_title": "已完成任务列表:"
+    "mcd_task.done_task_list_title": "已完成任务列表:",
+    "mcd_task.on_player_joined": "您有{}项已逾期的任务, 请赶快填坑!",
+    "mcd_task.on_player_renamed": "检测到游戏ID变更, 继承了{}项任务",
+    "mcd_task.list_responsible_title": "此任务由以下玩家承包:",
+    "mcd_task.removed_responsibles_title": "移除了{}名责任人:",
+    "mcd_task.added_responsibles_title": "添加了{}名责任人:",
+    "mcd_task.illegal_call": "不含额外参数的该指令仅可作为玩家使用"
 }
