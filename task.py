@@ -25,23 +25,22 @@ PLUGIN_METADATA = {
 
 FILE_PATH = "./config/task/mc_task.json"
 FILE_PATH_PREV = "./plugins/task/mc_task.json"
-help_msg = '''------MCD TASK插件------
-§a命令帮助如下:§r
-§6!!task help§r 显示帮助信息
-§6!!task list§r 显示任务列表
-§6!!task detail [任务名称]§r 查看任务详细信息
-§6!!task detail-all§r 查看所有任务详细信息
-§6!!task add [任务名称] [任务描述(可选)]§r 添加任务
-§6!!task del [任务名称]§r 删除任务
-§6!!task rename [旧任务名称] [新任务名称]§r 重命名任务
-§6!!task change [任务名称] [新任务描述]§r 修改任务描述
-§6!!task done [任务名称]§r 标注任务为已完成
-§6!!task undone [任务名称]§r 标注任务为未完成
+help_msg = '''----- MCDR {1} v{2} -----
+§d【指令帮助】§r
+§7{0} help§r 显示帮助信息
+§7{0} list§r 显示任务列表
+§7{0} detail [任务名称]§r 查看任务详细信息
+§7{0} detail-all§r 查看所有任务详细信息
+§7{0} add [任务名称] [任务描述(可选)]§r 添加任务
+§7{0} del [任务名称]§r 删除任务
+§7{0} rename [旧任务名称] [新任务名称]§r 重命名任务
+§7{0} change [任务名称] [新任务描述]§r 修改任务描述
+§7{0} done [任务名称]§r 标注任务为已完成
+§7{0} undone [任务名称]§r 标注任务为未完成
 §c注: 可用鼠标点击任务查看详情，或点击加号快速添加新任务§r
 注: 上述所有 §6[任务名称]§r 可以用 §6[任务名称].[子任务名称]§r 的形式来访问子任务
 例: (若已经有 §e女巫塔§r 任务, 可使用以下命令添加子任务)
-    §6!!task add 女巫塔.铺地板 挂机铺黑色玻璃§r
---------------------------------'''
+    §6!!task add 女巫塔.铺地板 挂机铺黑色玻璃§r'''
 
 debug_mode = False
 

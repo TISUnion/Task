@@ -2,7 +2,7 @@
 
 A plugin shows tasks of project in progress
 
-[stext](https://github.com/TISUnion/stext) is needed
+stext is no longer needed
 
 ### Usage
 

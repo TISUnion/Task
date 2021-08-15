@@ -1,0 +1,17 @@
+{
+    "permission":
+    {
+        "list": 0,
+        "detail": 0,
+        "add": 1,
+        "del": 1,
+        "rename": 1,
+        "change": 1,
+        "done": 1,
+        "undone": 1,
+        "responsible": 2,
+        "deadline": 2
+    },
+    "force_equal_permission": false,
+    "detect_player_rename": true
+}
