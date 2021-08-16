@@ -25,8 +25,8 @@ class root:
         cls.logger.debug(msg, option=option, no_check=DEBUG_MODE)
 
     @classmethod
-    def tr(cls, key: Optional[str], *args, lang: Optional[str] = None, fallback: str = 'en_us'):
-        return cls.server.tr(key, language=lang, fallback_language=fallback).format(*args)
+    def tr(cls, key: Optional[str], *args, lang: Optional[str] = None):
+        return cls.server.tr(key, language=lang, fallback_language='en_us').format(*args)
 
     @classmethod
     def set_server(cls, server: PluginServerInterface):
@@ -105,7 +105,9 @@ class ResponsibleManager:
 
     def load(self) -> None:
         with open(self.path, 'r', encoding='UTF-8') as f:
-            self.player_work = json.load(f)
+            to_load = json.load(f)
+        for p, t in to_load.items():
+            self.player_work[p] = set(t)
 
     def get_responsibles(self, task_title: Union['TitleList', str]):
         task_title = str(task_title)

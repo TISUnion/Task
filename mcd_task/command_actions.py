@@ -188,7 +188,7 @@ def _task_info_simple(raw_titles: Union[TitleList, str],
                 description.append(
                     rclick(
                         formatted_time(ddl), tr("mcd_task.set_ddl_hover"),
-                        "{} deadline {}".format(PREFIX, titles_commands),
+                        "{} deadline {} ".format(PREFIX, titles_commands),
                         action=RAction.suggest_command, color=RColor.gold
                     )
                 )
@@ -361,11 +361,8 @@ def set_task_deadline(source: CommandSource, titles: str, ddl: str) -> None:
     deadline = float(time.time()) + float(ddl) * 3600 * 24
     root.task_manager.set_deadline(TitleList(titles), deadline)
     source.reply(
-        RText(
-            tr("mcd_task.ddl_set", titles,
-               ddl, formatted_time(deadline)),
-            color=RColor.yellow
-        )
+        tr("mcd_task.ddl_set", titles,
+           ddl, formatted_time(deadline))
     )
 
 
@@ -383,9 +380,9 @@ def show_help(source: CommandSource):
             help_msg_rtext += '\n'
         result = re.search(r'(?<=§7){}[\S ]*?(?=§)'.format(PREFIX), line)
         if result is not None and symbol != 2:
-            cmd = result.group() + ' '
+            cmd = result.group().strip() + ' '
             help_msg_rtext += RText(line).c(RAction.suggest_command, cmd).h(
-                tr("mcd_task.help_msg_suggest_hover", cmd))
+                tr("mcd_task.help_msg_suggest_hover", cmd.strip()))
             symbol = 1
         else:
             help_msg_rtext += line

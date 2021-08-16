@@ -20,7 +20,7 @@
     "mcd_task.group_has_no_task": "当前小组没有任务",
     "mcd_task.group_task_list_head": "当前小组具有如下任务:",
     "mcd_task.time_format": "%Y-%m-%d %H:%M:%S",
-    "mcd_task.ddl_set": "为任务{}设置了{}日({})的截止日期",
+    "mcd_task.ddl_set": "为任务 §e{}§r 设置了 §e{}§r 日(§e{}§r)的截止日期",
     "mcd_task.group_removed_player": "移除了{}名玩家后的小组剩余玩家如下: ",
     "mcd_task.group_appended_player": "添加了{}名玩家后的小组玩家如下: ",
     "mcd_task.group_renamed": "小组{}已被重命名为{}:",
@@ -45,5 +45,6 @@
     "mcd_task.removed_responsibles_title": "移除了{}名责任人: ",
     "mcd_task.added_responsibles_title": "添加了{}名责任人: ",
     "mcd_task.illegal_call": "不含额外参数的该指令仅可作为玩家使用",
-    "mcd_task.help_msg_suggest_hover": "点此以填入§7{}§r"
+    "mcd_task.help_msg_suggest_hover": "点此以填入§7{}§r",
+    "mcd_task.set_ddl_hover": "点此为任务设置工期"
 }

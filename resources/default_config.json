@@ -1,16 +1,21 @@
 {
     "permission":
     {
+        "help": 0,
         "list": 0,
         "detail": 0,
+        "detail-all": 0,
         "add": 1,
         "del": 1,
         "rename": 1,
         "change": 1,
         "done": 1,
         "undone": 1,
-        "responsible": 2,
-        "deadline": 2
+        "deadline": 2,
+        "player": 2,
+        "res": 2,
+        "unres": 2,
+        "list-res": 1
     },
     "detect_player_rename": true
 }

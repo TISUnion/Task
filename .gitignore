@@ -138,4 +138,5 @@ dmypy.json
 .directory
 
 # Config
-mc_task.json
+*.json
+*.yml

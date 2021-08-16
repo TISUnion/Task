@@ -1,6 +1,6 @@
 {
     "id": "mcd_task",
-    "version": "2.0.0-alpha.1",
+    "version": "2.0.0-alpha.2",
     "name": "Task",
     "description": "A plugin to show tasks of project in progress",
     "author": [
@@ -9,7 +9,7 @@
     ],
     "link": "https://github.com/TISUnion/Task",
     "dependencies": {
-        "mcdreforged": "*"
+        "mcdreforged": ">=2.0.0-beta.1"
     },
     "resources": [
         "lang",

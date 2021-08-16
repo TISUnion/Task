@@ -24,7 +24,7 @@ RESG_PATH = os.path.join(DATA_FOLDER, "responsible.json")
 LOG_PATH = os.path.join(DATA_FOLDER, "logs", "task.log")
 
 # If this is True, will output debug log in server console
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 # Supported languages
 LANGUAGES = ["en_us", "zh_cn"]

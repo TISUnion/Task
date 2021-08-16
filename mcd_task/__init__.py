@@ -20,6 +20,8 @@ def on_info(server: PluginServerInterface, info: Info):
                 info.get_command_source().reply('Manager title is {}'.format(root.task_manager.title))
             elif args[2] == 'full-path' and len(args) == 4:
                 info.get_command_source().reply(root.task_manager[args[3]].full_path())
+            elif args[2] == 'player-join':
+                on_player_joined(server, info.player, info)
 
 
 def on_player_joined(server: PluginServerInterface, player: str, info: Info):
@@ -27,7 +29,7 @@ def on_player_joined(server: PluginServerInterface, player: str, info: Info):
     now_time = float(time.time())
     for t in root.task_manager.get_responsible_manager()[player]:
         task = root.task_manager[t]
-        if not task.done and now_time > task.deadline:
+        if not task.done and now_time > task.deadline != 0:
             player_tasks.append(task)
     if len(player_tasks) > 0:
         task_timed_out(server, player, player_tasks)
