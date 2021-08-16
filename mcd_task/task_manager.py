@@ -1,11 +1,48 @@
 import json
+import os
 
-from typing import Optional, Dict, List, Union, Tuple, Any, TYPE_CHECKING, Set
+from typing import Optional, Dict, List, Union, Tuple, Any, Set
+from mcdreforged.api.all import *
 
-from mcd_task.globals import *
+from mcd_task.config import Config
+from mcd_task.constants import TASK_PATH, RESG_PATH, DEBUG_MODE, LOG_PATH
 
-if TYPE_CHECKING:
-    from mcdreforged.api.types import MCDReforgedLogger
+
+# |=================================|
+# |   Global varibles and methods   |
+# |=================================|
+
+
+class root:
+    task_manager = None             # type: Optional[TaskManager]
+    config = Config(ServerInterface.get_instance().as_plugin_server_interface())
+    server = None                   # type: Optional['PluginServerInterface']
+    logger = None                   # type: Optional[MCDReforgedLogger]
+    config.load()
+
+    @classmethod
+    def debug(cls, msg, option=None):
+        cls.logger.debug(msg, option=option, no_check=DEBUG_MODE)
+
+    @classmethod
+    def tr(cls, key: Optional[str], *args, lang: Optional[str] = None, fallback: str = 'en_us'):
+        return cls.server.tr(key, language=lang, fallback_language=fallback).format(*args)
+
+    @classmethod
+    def set_server(cls, server: PluginServerInterface):
+        cls.server = server
+        cls.logger = server.logger
+
+    @classmethod
+    def setup_task_manager(cls, task_manager: 'TaskManager'):
+        cls.task_manager = task_manager
+        cls.task_manager.load()
+
+    @classmethod
+    def setup_logger(cls):
+        if not os.path.isdir(os.path.dirname(LOG_PATH)):
+            os.makedirs(os.path.dirname(LOG_PATH))
+        cls.logger.set_file(LOG_PATH)
 
 
 class ResponsibleManager:
@@ -60,8 +97,11 @@ class ResponsibleManager:
             self.save()
 
     def save(self) -> None:
+        to_save = {}
+        for p, t in self.player_work.items():
+            to_save[p] = list(t)
         with open(self.path, 'w', encoding='UTF-8') as f:
-            json.dump(self.player_work, f, indent=4, ensure_ascii=False)
+            json.dump(to_save, f, indent=4, ensure_ascii=False)
 
     def load(self) -> None:
         with open(self.path, 'r', encoding='UTF-8') as f:
@@ -72,7 +112,7 @@ class ResponsibleManager:
         ret = set()
         for key, value in self.player_work.items():
             if task_title in value:
-                ret = ret.add(key)
+                ret.add(key)
         return list(ret)
 
     def __getitem__(self, player: str) -> Set[str]:
@@ -82,17 +122,21 @@ class ResponsibleManager:
 class TitleList:
     def __init__(self, titles: Optional[Union[str, 'TitleList']] = None):
         self.titles = list(str(titles).split('.')) if titles is not None else []
-        self.removed = TitleList()
+        self.__removed = []
 
     def pop_head(self) -> str:
         ret = self.titles.pop(0)
-        self.removed.append(ret)
+        self.__removed.append(ret)
         return ret
 
     def pop_tail(self) -> str:
         ret = self.titles.pop()
-        self.removed.lappend(ret)
+        self.__removed = self.removed.copy().lappend(ret).titles
         return ret
+
+    @property
+    def removed(self):
+        return TitleList('.'.join(self.__removed).strip('.'))
 
     @property
     def head(self) -> Optional[str]:
@@ -169,9 +213,10 @@ class TaskBase:
         return list(self.child_map.keys())
 
     def next_layer(self, titles: 'TitleList') -> Tuple[str, TitleList]:
-        next_layer_title, titles = titles.pop_head()
+        next_layer_title = titles.pop_head()
         if next_layer_title not in next_layer_title:
-            raise TaskNotFoundError(self.full_path().append(next_layer_title))
+            root.debug("Next layer not found: " + next_layer_title)
+            raise TaskNotFoundError(self.full_path().copy().append(next_layer_title))
         return next_layer_title, titles
 
     def split_sub_tasks_by_done(self):
@@ -187,14 +232,14 @@ class TaskBase:
     def dict(self):
         ret = {}
         for key, value in self.__dict__.items():
-            if not key.startswith('__'):
+            if not key.startswith('_Task'):
                 if key == 'sub_tasks':
                     ret[key] = self.__get_sub_task_list()
                 elif key not in self.OPTIONAL_KEYS or key:
                     ret[key] = value
         return ret
 
-    def __get_sub_task_list(self) -> List[dict]:
+    def __get_sub_task_list(self) -> List[Any]:
         ret = []
         for item in self.sub_tasks:
             ret.append(item.dict)
@@ -211,18 +256,22 @@ class TaskBase:
             )
             task.done = i["done"]
             if i.get("deadline"):
-                task.set_deadline(i["deadline"])
+                task.deadline = i["deadline"]
             task.create_sub_tasks_from_dict(i["sub_tasks"])
             self.sub_tasks.append(task)
 
-    def __getitem__(self, titles: Union[TitleList, str]) -> 'Task':
+    def __getitem__(self, titles: Union[TitleList, str]) -> 'TaskBase':
         if isinstance(titles, str):
             titles = TitleList(titles)
-        next_layer_title, titles = self.next_layer(titles)
-        if next_layer_title not in self.child_titles:
-            raise TaskNotFoundError(titles.lappend(next_layer_title))
+        root.debug("Target title is {}".format(str(titles)))
         if titles.is_empty:
-            return self.child_map[next_layer_title]
+            root.debug("Found {}, returning".format(str(self.full_path())))
+            return self
+        next_layer_title, titles = self.next_layer(titles)
+        root.debug("{} has following tasks: {}".format(self.title, self.child_titles))
+        if next_layer_title not in self.child_titles:
+            root.debug("No task named {} found, return None".format(str(titles)))
+            raise TaskNotFoundError(titles.lappend(next_layer_title))
         return self.child_map[next_layer_title][titles]
 
 
@@ -230,7 +279,7 @@ class Task(TaskBase):
     def __init__(self, title: str, father: Union['Task', 'TaskBase'], desc: str):
         super().__init__()
         self.title = title
-        self.father = father
+        self.__father = father
         self.description = desc
         self.__manager = None   # type: Optional[TaskManager]
 
@@ -251,10 +300,7 @@ class Task(TaskBase):
         :param titles: TitleList
         :return: TitleList
         """
-        return self.__father.full_path(titles.lappend(self.title))
-
-    def set_deadline(self, deadline_timestamp: int):
-        self.deadline = deadline_timestamp
+        return self.__father.full_path(titles.copy().lappend(self.title))
 
     # Deprecated(?)
     def get_manager(self) -> 'TaskManager':
@@ -269,8 +315,23 @@ class Task(TaskBase):
 class TaskManager(TaskBase):
     def __init__(self) -> None:
         super().__init__()
+        self.title = "TaskManager"
         self.__path = TASK_PATH
         self.__responsible_manager = ResponsibleManager()
+
+    def exists(self, titles: TitleList) -> bool:
+        titles = titles.copy()
+        father_titles = titles.copy()
+        title = father_titles.pop_tail()
+        try:
+            father = self[father_titles]
+        except TaskNotFoundError:
+            return False
+        if title in father.child_titles:
+            root.debug('{} already has {}'.format(father.full_path(), title))
+            return True
+        else:
+            return False
 
     def get_responsible_manager(self):
         return self.__responsible_manager
@@ -278,28 +339,48 @@ class TaskManager(TaskBase):
     def full_path(self, titles: 'TitleList' = TitleList()) -> 'TitleList':
         return titles
 
-    def delete_task(self, titles: 'TitleList') -> None:
+    def add_task(self, titles: 'TitleList', desc: str = '', should_save=True) -> None:
+        super().add_task(titles, desc)
+        if should_save:
+            self.save()
+
+    def delete_task(self, titles: 'TitleList', should_save=True) -> None:
         title_to_del = titles.pop_tail()
         father_delete = self[titles]
         task = father_delete.child_map[title_to_del]
         father_delete.sub_tasks.remove(task)
         self.__responsible_manager.remove_task(titles)
+        if should_save:
+            self.save()
 
-    def rename_task(self, titles: 'TitleList', new_title: str) -> None:
+    def rename_task(self, titles: 'TitleList', new_title: str, should_save=True) -> None:
         self[titles].title = new_title
         new_titles = titles.copy()
         new_titles.pop_tail()
         new_titles.append(new_title)
         self.__responsible_manager.rename_task(titles, new_title)
+        if should_save:
+            self.save()
 
-    def edit_desc(self, titles: 'TitleList', new_desc: str) -> None:
+    def set_deadline(self, titles: 'TitleList', deadline: float, should_save=True) -> None:
+        self[titles].deadline = deadline
+        if should_save:
+            self.save()
+
+    def edit_desc(self, titles: 'TitleList', new_desc: str, should_save=True) -> None:
         self[titles].description = new_desc
+        if should_save:
+            self.save()
 
-    def done_task(self, titles: 'TitleList'):
+    def done_task(self, titles: 'TitleList', should_save=True):
         self[titles].done = True
+        if should_save:
+            self.save()
 
-    def undone_task(self, titles: 'TitleList'):
+    def undone_task(self, titles: 'TitleList', should_save=True):
         self[titles].done = False
+        if should_save:
+            self.save()
 
     def save(self):
         with open(self.__path, 'w', encoding='UTF-8') as f:
@@ -311,6 +392,8 @@ class TaskManager(TaskBase):
         with open(self.__path, 'r', encoding='UTF-8') as f:
             js = json.load(f)
         self.create_sub_tasks_from_dict(js["sub_tasks"])
+        self.__responsible_manager.load()
+        root.debug("Loaded tasks: {}".format(json.dumps(js, indent=4, ensure_ascii=False)))
 
     def set_responsible(self, titles: TitleList, *res):
         num = 0
@@ -322,27 +405,30 @@ class TaskManager(TaskBase):
             else:
                 num += 1
         self.__responsible_manager.save()
+        return num
 
     def rm_responsible(self, titles: TitleList, *res):
-        num = 0
+        removed = set()
         for r in res:
             try:
                 self.__responsible_manager.rm_work(r, titles, should_save=False)
             except TaskNotFoundError:
                 pass
             else:
-                num += 1
+                removed.add(r)
         self.__responsible_manager.save()
-        return num
+        return removed
 
-    def set_perm(self, titles: TitleList, perm_level: int) -> None:
+    def set_perm(self, titles: TitleList, perm_level: int, should_save=True) -> None:
         if perm_level in [0, 1, 2, 3, 4]:
             self[titles].permission = perm_level
+        if should_save:
+            self.save()
 
 
 class TaskNotFoundError(Exception):
     def __init__(self, titles: TitleList) -> None:
-        self.titles = titles
+        self.titles = str(titles)
 
 
 class DuplicatedSameTask(Exception):
@@ -351,4 +437,4 @@ class DuplicatedSameTask(Exception):
 
 class IllegalTaskName(Exception):
     def __init__(self, titles):
-        self.titles = titles
+        self.titles = str(titles)
