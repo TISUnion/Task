@@ -138,5 +138,6 @@ dmypy.json
 .directory
 
 # Config
-*.json
-*.yml
+config.json
+mc_task.json
+responsible.json

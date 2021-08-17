@@ -48,7 +48,7 @@ class Config:
     @staticmethod
     def __getkeyfromdict(target_dict: Dict[str, Any], key: str = None) -> Any:
         key_list = key.split('.')
-        ret = target_dict
+        ret = target_dict.copy()
         while True:
             k = key_list.pop(0)
             ret = ret.get(k)
@@ -58,6 +58,19 @@ class Config:
             ret = None
         return ret
 
+    @staticmethod
+    def __setkeytodict(target_dict: Dict[str, Any], key: str, value: Any):
+        key_list = key.split('.')
+        dic = target_dict
+        while True:
+            k = key_list.pop(0)
+            if not isinstance(dic.get(k), dict) and len(key_list) != 0:
+                dic[k] = {}
+            if len(key_list) == 0:
+                dic[k] = value
+                return
+            dic = dic[k]
+
     def __getitem__(self, key: str) -> Any:
         ret = self.__getkeyfromdict(self.data, key)
         if ret is None:
@@ -65,6 +78,7 @@ class Config:
                                      "Requested key: {}".format(key), no_check=DEBUG_MODE)
             defv = self.__getkeyfromdict(self.default_config, key)
             if defv:
-                self.__write_config({key: defv})
+                self.__setkeytodict(self.data, key, defv)
+                self.__write_config()
                 self.server.logger.info("Restored default value for {}".format(key))
         return ret

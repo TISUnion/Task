@@ -22,6 +22,8 @@ def on_info(server: PluginServerInterface, info: Info):
                 info.get_command_source().reply(root.task_manager[args[3]].full_path())
             elif args[2] == 'player-join':
                 on_player_joined(server, info.player, info)
+            elif args[2] == 'player-renamed' and len(args) == 5:
+                inherit_responsible(info, old_name=args[3], new_name=args[4], debug=True)
 
 
 def on_player_joined(server: PluginServerInterface, player: str, info: Info):

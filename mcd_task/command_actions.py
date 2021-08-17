@@ -1,7 +1,7 @@
 import re
 import time
 
-from typing import Callable, Any, Optional, Union, List
+from typing import Callable, Any, Optional, Union, List, Iterable
 from mcdreforged.api.all import *
 
 from mcd_task.constants import PREFIX, DEBUG_MODE
@@ -14,11 +14,8 @@ from mcd_task.task_manager import TitleList, TaskNotFoundError, root, TaskBase, 
 
 
 def register_cmd_tree(server: PluginServerInterface):
-    def pliteral(literal: Union[set, str]) -> Literal:
-        ltr = literal
-        if isinstance(literal, set):
-            ltr = list(literal)[1]
-        lvl = root.config['permission.{}'.format(ltr)]
+    def pliteral(*literal: str) -> Literal:
+        lvl = root.config['permission.{}'.format(literal[0])]
         lvl = lvl if isinstance(lvl, int) else 0
         return Literal(literal).requires(
             lambda src: src.has_permission(lvl),
@@ -69,17 +66,17 @@ def register_cmd_tree(server: PluginServerInterface):
             pliteral("player").then(
                 QuotableText("name").runs(exe(info_player)))
         ).then(
-            pliteral({"res", "responsible"}).then(
+            pliteral("responsible", "res").then(
                 QuotableText("titles").runs(exe(set_responsible)).then(
                     GreedyText("players").runs(exe(set_responsible))))
         ).then(
-            pliteral({"unres", "unresponsible"}).then(
+            pliteral("unresponsible", "unres").then(
                 QuotableText("titles").runs(exe(rm_responsible)).then(
                     GreedyText("players").runs(exe(rm_responsible))))
         ).then(
-            pliteral({"list-res", "list-responsibles"}).then(
+            pliteral("list-responsibles", "list-res").then(
                 QuotableText("titles").runs(exe(list_responsible)))
-        )
+        ).on_child_error(CommandError, cmd_error, handled=True)
     )
 
 
@@ -88,15 +85,15 @@ def register_cmd_tree(server: PluginServerInterface):
 # =================================
 
 
-def tr(key: str, *args, **kwargs):
+def tr(key: str, *args, lang=None):
     """
     Translate shortcut
     :param key:
     :param args:
-    :param kwargs:
+    :param lang:
     :return:
     """
-    return root.tr(key, *args, **kwargs)
+    return root.tr(key, *args, lang=lang)
 
 
 def rclick(msg: str, hover: str, cmd: str, action: RAction = RAction.run_command,
@@ -136,7 +133,6 @@ def _task_info_simple(raw_titles: Union[TitleList, str],
                       ddl=None):
     titles_commands = str(raw_titles).strip('.')
     titles = str(raw_titles) if full else TitleList(raw_titles).tail
-    root.debug("Building title text for {}".format(titles))
     # Indent text
     if idt is None:
         idt = 8 if sub else 4
@@ -209,7 +205,6 @@ def _task_info_simple(raw_titles: Union[TitleList, str],
 
 def _task_info_flexible(title: Union[TitleList, str], sub=False, idt=4):
     title = TitleList(title)
-    root.debug(f"Trying to detail {str(title)}")
     target_task = root.task_manager[title]  # type: TaskBase
     desc = target_task.description
     text = RTextList(
@@ -222,7 +217,6 @@ def _task_info_flexible(title: Union[TitleList, str], sub=False, idt=4):
     )
     if len(target_task.sub_tasks) == 0:
         return text
-    root.debug("sub_tasks.rue")
     for t in target_task.sub_tasks:
         text.append(
             _task_info_flexible(t.full_path(), sub=True, idt=idt + 4)
@@ -270,7 +264,6 @@ def _info_task(title: Optional[str] = None, done=False) -> Optional[RTextList]:
         except TaskNotFoundError:
             target_task = None  # type: Optional[TaskBase]
 
-    root.debug("_info_task: target_task = {}".format('None' if target_task is None else target_task.full_path()))
     text = RTextList()
 
     # Task tree
@@ -287,6 +280,13 @@ def _info_task(title: Optional[str] = None, done=False) -> Optional[RTextList]:
     else:
         text.append(_task_info_flexible(target_task.full_path(), sub=False))
     return text
+
+
+def _source_name(source: CommandSource):
+    if isinstance(source, PlayerCommandSource):
+        return source.player
+    else:
+        return source.__class__.__name__
 
 
 # =========================
@@ -364,6 +364,7 @@ def set_task_deadline(source: CommandSource, titles: str, ddl: str) -> None:
         tr("mcd_task.ddl_set", titles,
            ddl, formatted_time(deadline))
     )
+    root.log(f"{_source_name(source)} set task deadline to {formatted_time(deadline, locale='en_us')}")
 
 
 def list_task(source: CommandSource):
@@ -396,8 +397,8 @@ def add_task(source: CommandSource, titles: str, desc: str = ''):
     titles_for_text = titles.copy()
     if not root.task_manager.exists(titles):
         root.task_manager.add_task(titles, desc=desc)
-        root.debug("Added task: {}".format(str(titles_for_text)))
         info_task(source, title=titles_for_text.head, prefix=tr("mcd_task.new_task_created"))
+        root.log(f"{_source_name(source)} created new task named {str(titles_for_text)}")
     else:
         task_already_exist(source)
 
@@ -417,6 +418,7 @@ def remove_task(source: CommandSource, titles: str):
         return
     root.task_manager.delete_task(TitleList(titles))
     source.reply(tr("mcd_task.deleted_task", "§e{}§r".format(titles)))
+    root.log(f"{_source_name(source)} deleted task {titles}")
 
 
 def rename_task(source: CommandSource, old_titles: str, new_title: str) -> None:
@@ -425,11 +427,13 @@ def rename_task(source: CommandSource, old_titles: str, new_title: str) -> None:
         return
     if '.' in list(new_title):
         source.reply(tr("mcd_task.illegal_title_with_dot", new_title))
+        return
     root.task_manager.rename_task(TitleList(old_titles), new_title)
     new_titles = TitleList(old_titles)
     new_titles.pop_tail()
     new_titles.append(new_title)
-    info_task(source, prefix=str(new_titles))
+    info_task(source, title=str(new_titles), prefix=tr("mcd_task.task_renamed", old_titles, str(new_titles)))
+    root.log(f"{_source_name(source)} renamed {old_titles} to {str(new_titles)}")
 
 
 def edit_desc(source: CommandSource, titles: str, desc: str) -> None:
@@ -439,6 +443,7 @@ def edit_desc(source: CommandSource, titles: str, desc: str) -> None:
         return
     root.task_manager.edit_desc(title_list, desc)
     info_task(source, title=titles)
+    root.log(f"{_source_name(source)} changed task {titles} description to {desc}")
 
 
 def set_done(source: CommandSource, titles: str) -> None:
@@ -447,6 +452,7 @@ def set_done(source: CommandSource, titles: str) -> None:
         return
     root.task_manager.done_task(TitleList(titles))
     info_task(source, title=titles)
+    root.log(f"{_source_name(source)} marked task {titles} as done")
 
 
 def set_undone(source: CommandSource, titles: str) -> None:
@@ -455,6 +461,7 @@ def set_undone(source: CommandSource, titles: str) -> None:
         return
     root.task_manager.undone_task(TitleList(titles))
     info_task(source, title=titles)
+    root.log(f"{_source_name(source)} marked task {titles} as undone")
 
 
 def list_done(source: CommandSource):
@@ -471,9 +478,10 @@ def set_responsible(source: CommandSource, titles: str, players: Optional[str] =
         else:
             illegal_call(source)
             return
-    players = players.split('.')
+    players = players.split(' ')
     num = root.task_manager.set_responsible(TitleList(titles), *players)
     list_responsible(source, titles, prefix=tr("mcd_task.added_responsibles_title", num))
+    root.log(f"{_source_name(source)} added responsibles for task {str(titles)}: {str(players)}")
 
 
 def rm_responsible(source: CommandSource, titles: str, players: Optional[str] = None) -> None:
@@ -485,11 +493,13 @@ def rm_responsible(source: CommandSource, titles: str, players: Optional[str] = 
             players = source.player
         else:
             illegal_call(source)
+            return
     players = players.split('.')
     removed = root.task_manager.rm_responsible(TitleList(titles), *players)
     num = len(removed)
     list_responsible(source, titles, player_removed=removed,
                      prefix=tr("mcd_task.removed_responsibles_title", num))
+    root.log(f"{_source_name(source)} removed responsibles for task {str}: {str(players)}")
 
 
 def list_responsible(source: CommandSource, titles: str, player_removed=None, prefix=None) -> None:
@@ -499,9 +509,10 @@ def list_responsible(source: CommandSource, titles: str, player_removed=None, pr
     if player_removed is None:
         player_removed = []
     player_list = root.task_manager.get_responsible_manager().get_responsibles(titles)
+    num = len(player_list)
     task_done = root.task_manager[titles].done
     text = RTextList(
-        RText(tr("mcd_task.list_responsible_title") if prefix is None else prefix, RColor.green, RStyle.bold),
+        RText(tr("mcd_task.list_responsible_title", num) if prefix is None else prefix, RColor.green, RStyle.bold),
         '\n', _task_info_simple(titles, full=True, sub=True, done=task_done, idt=4)
     )
     for p in player_list:
@@ -518,11 +529,13 @@ def list_responsible(source: CommandSource, titles: str, player_removed=None, pr
     source.reply(text)
 
 
-def inherit_responsible(info: Info, old_name: str, new_name: str):
+def inherit_responsible(info: Info, old_name: str, new_name: str, debug=False):
     resm = root.task_manager.get_responsible_manager()
     resm.rename_player(old_name, new_name)
     num = len(resm[new_name])
     info.get_server().tell(new_name, tr("mcd_task.on_player_renamed", num))
+    root.logger.debug(tr("mcd_task.on_player_renamed", num), no_check=debug)
+    root.log(f"Detected player rename {old_name} -> {new_name}. Inherited {num} task(s)")
 
 
 def task_timed_out(server: PluginServerInterface, player: str, player_tasks: List[TaskBase]):

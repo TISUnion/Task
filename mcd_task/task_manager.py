@@ -1,8 +1,11 @@
 import json
 import os
+import logging
+import types
 
 from typing import Optional, Dict, List, Union, Tuple, Any, Set
 from mcdreforged.api.all import *
+from parse import parse
 
 from mcd_task.config import Config
 from mcd_task.constants import TASK_PATH, RESG_PATH, DEBUG_MODE, LOG_PATH
@@ -20,13 +23,21 @@ class root:
     logger = None                   # type: Optional[MCDReforgedLogger]
     config.load()
 
-    @classmethod
-    def debug(cls, msg, option=None):
-        cls.logger.debug(msg, option=option, no_check=DEBUG_MODE)
+    class TaskLogger(MCDReforgedLogger):
+        def set_file(self, file_path=None):
+            if self.file_handler is not None:
+                self.removeHandler(self.file_handler)
+            self.file_handler = logging.FileHandler(LOG_PATH, encoding='UTF-8')
+            self.file_handler.setFormatter(self.FILE_FMT)
+            self.addHandler(self.file_handler)
 
     @classmethod
-    def tr(cls, key: Optional[str], *args, lang: Optional[str] = None):
-        return cls.server.tr(key, language=lang, fallback_language='en_us').format(*args)
+    def log(cls, msg):
+        cls.logger.info(msg)
+
+    @classmethod
+    def tr(cls, key: Optional[str], *args, lang=None):
+        return cls.server.tr(key, *args, language=lang)
 
     @classmethod
     def set_server(cls, server: PluginServerInterface):
@@ -40,9 +51,8 @@ class root:
 
     @classmethod
     def setup_logger(cls):
-        if not os.path.isdir(os.path.dirname(LOG_PATH)):
-            os.makedirs(os.path.dirname(LOG_PATH))
-        cls.logger.set_file(LOG_PATH)
+        cls.logger.set_file = types.MethodType(cls.TaskLogger.set_file, cls.logger)
+        cls.logger.set_file()
 
 
 class ResponsibleManager:
@@ -59,19 +69,30 @@ class ResponsibleManager:
 
     def rename_task(self, old_title: Union['TitleList', str],
                     new_title: Union['TitleList', str], should_save=True) -> None:
-        old_title, new_title = str(old_title), str(new_title)
-        for value in self.player_work.values():
-            if old_title in value:
-                value.remove(old_title)
-                value.add(new_title)
+        old_title, new_titles = str(old_title), TitleList(old_title)
+        new_titles.pop_tail()
+        new_titles.append(new_title)
+        new_title = str(new_titles)
+        new_data = {}
+        for key, value in self.player_work.items():
+            for t in value:
+                psd = parse(old_title + '{ext}', t)
+                if psd is not None:
+                    new_data[key] = value.copy()
+                    new_data[key].remove(t)
+                    new_data[key].add(new_title + psd['ext'])
+        self.player_work.update(new_data)
         if should_save:
             self.save()
 
     def remove_task(self, task_title: Union['TitleList', str], should_save=True) -> None:
         task_title = str(task_title)
-        for value in self.player_work.values():
-            if task_title in value:
-                value.remove(task_title)
+        removed = self.player_work.copy()
+        for key, value in self.player_work.items():
+            for t in value.copy():
+                if t.startswith(task_title):
+                    removed[key].remove(t)
+        self.player_work = removed
         if should_save:
             self.save()
 
@@ -104,6 +125,8 @@ class ResponsibleManager:
             json.dump(to_save, f, indent=4, ensure_ascii=False)
 
     def load(self) -> None:
+        if not os.path.isfile(self.path):
+            self.save()
         with open(self.path, 'r', encoding='UTF-8') as f:
             to_load = json.load(f)
         for p, t in to_load.items():
@@ -217,7 +240,6 @@ class TaskBase:
     def next_layer(self, titles: 'TitleList') -> Tuple[str, TitleList]:
         next_layer_title = titles.pop_head()
         if next_layer_title not in next_layer_title:
-            root.debug("Next layer not found: " + next_layer_title)
             raise TaskNotFoundError(self.full_path().copy().append(next_layer_title))
         return next_layer_title, titles
 
@@ -265,14 +287,10 @@ class TaskBase:
     def __getitem__(self, titles: Union[TitleList, str]) -> 'TaskBase':
         if isinstance(titles, str):
             titles = TitleList(titles)
-        root.debug("Target title is {}".format(str(titles)))
         if titles.is_empty:
-            root.debug("Found {}, returning".format(str(self.full_path())))
             return self
         next_layer_title, titles = self.next_layer(titles)
-        root.debug("{} has following tasks: {}".format(self.title, self.child_titles))
         if next_layer_title not in self.child_titles:
-            root.debug("No task named {} found, return None".format(str(titles)))
             raise TaskNotFoundError(titles.lappend(next_layer_title))
         return self.child_map[next_layer_title][titles]
 
@@ -330,7 +348,6 @@ class TaskManager(TaskBase):
         except TaskNotFoundError:
             return False
         if title in father.child_titles:
-            root.debug('{} already has {}'.format(father.full_path(), title))
             return True
         else:
             return False
@@ -347,16 +364,20 @@ class TaskManager(TaskBase):
             self.save()
 
     def delete_task(self, titles: 'TitleList', should_save=True) -> None:
-        title_to_del = titles.pop_tail()
-        father_delete = self[titles]
-        task = father_delete.child_map[title_to_del]
+        titles_father = titles.copy()
+        title_to_del = titles_father.pop_tail()
+        father_delete = self[titles_father]
+        try:
+            task = father_delete.child_map[title_to_del]
+        except KeyError:
+            raise TaskNotFoundError(titles.copy(), father_delete.full_path().copy())
         father_delete.sub_tasks.remove(task)
         self.__responsible_manager.remove_task(titles)
         if should_save:
             self.save()
 
     def rename_task(self, titles: 'TitleList', new_title: str, should_save=True) -> None:
-        self[titles].title = new_title
+        self[titles.copy()].title = new_title
         new_titles = titles.copy()
         new_titles.pop_tail()
         new_titles.append(new_title)
@@ -395,7 +416,6 @@ class TaskManager(TaskBase):
             js = json.load(f)
         self.create_sub_tasks_from_dict(js["sub_tasks"])
         self.__responsible_manager.load()
-        root.debug("Loaded tasks: {}".format(json.dumps(js, indent=4, ensure_ascii=False)))
 
     def set_responsible(self, titles: TitleList, *res):
         num = 0
@@ -429,8 +449,15 @@ class TaskManager(TaskBase):
 
 
 class TaskNotFoundError(Exception):
-    def __init__(self, titles: TitleList) -> None:
+    def __init__(self, titles: TitleList, father: TitleList = None) -> None:
         self.titles = str(titles)
+        self.father = str(father) if father is not None else None
+
+    def __str__(self):
+        if self.father is not None:
+            return f"{self.father} has no sub-task named {self.titles}"
+        else:
+            return f"{self.titles} not found"
 
 
 class DuplicatedSameTask(Exception):

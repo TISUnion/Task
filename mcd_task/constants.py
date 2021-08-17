@@ -21,9 +21,9 @@ TASK_PATH_PREV = "./plugins/task/mc_task.json"
 # Responsible Group file path
 RESG_PATH = os.path.join(DATA_FOLDER, "responsible.json")
 # Log file path
-LOG_PATH = os.path.join(DATA_FOLDER, "logs", "task.log")
+LOG_PATH = os.path.join(DATA_FOLDER, "task.log")
 
-# If this is True, will output debug log in server console
+# If this is True, will enable some debug options
 DEBUG_MODE = False
 
 # Supported languages
