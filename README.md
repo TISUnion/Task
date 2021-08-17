@@ -1,29 +1,43 @@
+**English** | [中文](./README_cn.md)
+
 # Task
 
 A plugin shows tasks of project in progress
 
-[stext](https://github.com/TISUnion/stext) is needed
+Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >=2.0.0-beta.1
+
+[stext](https://github.com/TISUnion/stext) is no longer required. [MCDeamon](https://github.com/kafuuchino-desu/MCDaemon) and [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x and earlier is no longer supported
 
 ### Usage
 
-`!!task help` 显示帮助信息
+`!!task help` Show help message
 
-`!!task list` 显示任务列表
+`!!task [list]` Show task list
 
-`!!task detail [任务名称]` 查看任务详细信息
+`!!task detail <task>` Show task detail
 
-`!!task add [任务名称] [任务描述]` 添加任务
+`!!task add <task> [description]` Add a task
 
-`!!task del [任务名称]` 删除任务
+`!!task del <task]>` Remove a task
 
-`!!task rename [旧任务名称] [新任务名称]` 重命名任务
+`!!task rename <old task> <new task>` Rename a task
 
-`!!task change [任务名称] [新任务描述]` 修改任务描述
+`!!task change <task> <new description>` Edit a task description 
 
-`!!task done [任务名称]` 标注任务为已完成
+`!!task done <task>` Mark task as done
 
-`!!task undone [任务名称]` 标注任务为未完成
+`!!task undone <task>` Mark task as undone
 
-注: 上述所有 `[任务名称]` 可以用 `[任务名称].[子任务名称]` 的形式来访问子任务
+`!!task deadline <task> <period: day>` Set deadline for the task
 
-例: `!!task add 女巫塔.铺地板 挂机铺黑色玻璃`
+`!!task player <task>` Show player task list
+
+`!!task res[ponsible] <task> <player>` Set responsibles for this task
+
+`!!task unres[ponsible] <task> <player>` Remove responsibles from this task
+
+`!!task list-res[ponsibles] <task>` List reponsibles of this task
+
+PS: All the `<task>` above can be replaced by `<task>.<sub-task>` to access sub-task
+
+e.g. `!!task add Witch_Hut.Floor AFK black glass placement`
