@@ -18,7 +18,7 @@ Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >=2.0.0-bet
 
 `!!task add <task> [description]` Add a task
 
-`!!task del <task]>` Remove a task
+`!!task del <task>` Remove a task
 
 `!!task rename <old task> <new task>` Rename a task
 
