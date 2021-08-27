@@ -373,7 +373,7 @@ def list_task(source: CommandSource):
 
 def show_help(source: CommandSource):
     meta = source.get_server().get_plugin_metadata('mcd_task')
-    help_message = source.get_server().tr('mcd_task.help_msg').format(PREFIX, meta.name, str(meta.version))
+    help_message = source.get_server().tr('mcd_task.help_msg', PREFIX, meta.name, str(meta.version))
     help_msg_rtext = ''
     symbol = 0
     for line in help_message.splitlines():
