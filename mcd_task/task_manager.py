@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import logging
 import types
 
@@ -8,7 +9,7 @@ from mcdreforged.api.all import *
 from parse import parse
 
 from mcd_task.config import Config
-from mcd_task.constants import TASK_PATH, RESG_PATH, DEBUG_MODE, LOG_PATH
+from mcd_task.constants import TASK_PATH, RESG_PATH, DEBUG_MODE, LOG_PATH, PREFIX
 
 
 # |=================================|
@@ -37,7 +38,25 @@ class root:
 
     @classmethod
     def tr(cls, key: Optional[str], *args, lang=None):
-        return cls.server.tr(key, *args, language=lang)
+        return cls.server.rtr(key, *args, language=lang)
+
+    @classmethod
+    def htr(cls, key: str, *args, **kwargs) -> Union[str, RTextBase]:
+        help_message, help_msg_rtext = cls.server.tr(key, *args, **kwargs), RTextList()
+        if not isinstance(help_message, str):
+            cls.logger.error('Error translate text "{}"'.format(key))
+            return key
+        for line in help_message.splitlines():
+            result = re.search(r'(?<=§7){}[\S ]*?(?=§)'.format(PREFIX), line)
+            if result is not None:
+                cmd = result.group() + ' '
+                help_msg_rtext.append(RText(line).c(RAction.suggest_command, cmd).h(
+                    cls.tr("mcd_task.help_msg_suggest_hover", cmd)))
+            else:
+                help_msg_rtext.append(line)
+            if line != help_message.splitlines()[-1]:
+                help_msg_rtext.append('\n')
+        return help_msg_rtext
 
     @classmethod
     def set_server(cls, server: PluginServerInterface):

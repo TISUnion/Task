@@ -19,7 +19,7 @@ def register_cmd_tree(server: PluginServerInterface):
         lvl = lvl if isinstance(lvl, int) else 0
         return Literal(literal).requires(
             lambda src: src.has_permission(lvl),
-            failure_message_getter=lambda: server.tr('mcd_task.perm_denied').format(lvl)
+            failure_message_getter=lambda: server.rtr('mcd_task.perm_denied', lvl)
         )
 
     def exe(func: Callable[[CommandSource, str], Any]):
@@ -372,24 +372,8 @@ def list_task(source: CommandSource):
 
 
 def show_help(source: CommandSource):
-    meta = source.get_server().get_plugin_metadata('mcd_task')
-    help_message = source.get_server().tr('mcd_task.help_msg', PREFIX, meta.name, str(meta.version))
-    help_msg_rtext = ''
-    symbol = 0
-    for line in help_message.splitlines():
-        if help_msg_rtext != '':
-            help_msg_rtext += '\n'
-        result = re.search(r'(?<=§7){}[\S ]*?(?=§)'.format(PREFIX), line)
-        if result is not None and symbol != 2:
-            cmd = result.group().strip() + ' '
-            help_msg_rtext += RText(line).c(RAction.suggest_command, cmd).h(
-                tr("mcd_task.help_msg_suggest_hover", cmd.strip()))
-            symbol = 1
-        else:
-            help_msg_rtext += line
-            if symbol == 1:
-                symbol += 1
-    source.reply(help_msg_rtext)
+    meta = root.server.get_self_metadata()
+    source.reply(tr('mcd_task.help_msg', PREFIX, meta.name, meta.version).set_translator(root.htr))
 
 
 def add_task(source: CommandSource, titles: str, desc: str = ''):
@@ -531,11 +515,12 @@ def list_responsible(source: CommandSource, titles: str, player_removed=None, pr
 
 def inherit_responsible(info: Info, old_name: str, new_name: str, debug=False):
     resm = root.task_manager.get_responsible_manager()
-    resm.rename_player(old_name, new_name)
-    num = len(resm[new_name])
-    info.get_server().tell(new_name, tr("mcd_task.on_player_renamed", num))
-    root.logger.debug(tr("mcd_task.on_player_renamed", num), no_check=debug)
-    root.log(f"Detected player rename {old_name} -> {new_name}. Inherited {num} task(s)")
+    if old_name in resm.player_work.keys():
+        resm.rename_player(old_name, new_name)
+        num = len(resm[new_name])
+        info.get_server().tell(new_name, tr("mcd_task.on_player_renamed", num))
+        root.logger.debug(tr("mcd_task.on_player_renamed", num), no_check=debug)
+        root.log(f"Detected player rename {old_name} -> {new_name}. Inherited {num} task(s)")
 
 
 def task_timed_out(server: PluginServerInterface, player: str, player_tasks: List[TaskBase]):
