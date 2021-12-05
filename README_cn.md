@@ -4,7 +4,7 @@
 
 一个用于统计服务器进行中工程任务的插件
 
-需要 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.0.0-beta1(对于发布版本) / 2.1.0(对于开发版本)
+需要 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.0
 
 不再需要 [stext](https://github.com/TISUnion/stext), 不再兼容 [MCDeamon](https://github.com/kafuuchino-desu/MCDaemon) 及 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x及以下版本
 
