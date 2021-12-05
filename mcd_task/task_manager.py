@@ -37,19 +37,19 @@ class root:
         cls.logger.info(msg)
 
     @classmethod
-    def tr(cls, key: Optional[str], *args, lang=None):
-        return cls.server.rtr(key, *args, language=lang)
+    def tr(cls, key: Optional[str], *args, **kwargs):
+        return cls.server.rtr(key, *args, **kwargs)
 
     @classmethod
-    def htr(cls, key: str, *args, **kwargs) -> Union[str, RTextBase]:
-        help_message, help_msg_rtext = cls.server.tr(key, *args, **kwargs), RTextList()
+    def htr(cls, key: str, *args, language=None, **kwargs) -> Union[str, RTextBase]:
+        help_message, help_msg_rtext = cls.server.tr(key, *args, language=language, **kwargs), RTextList()
         if not isinstance(help_message, str):
             cls.logger.error('Error translate text "{}"'.format(key))
             return key
         for line in help_message.splitlines():
             result = re.search(r'(?<=§7){}[\S ]*?(?=§)'.format(PREFIX), line)
             if result is not None:
-                cmd = result.group() + ' '
+                cmd = result.group().strip() + ' '
                 help_msg_rtext.append(RText(line).c(RAction.suggest_command, cmd).h(
                     cls.tr("mcd_task.help_msg_suggest_hover", cmd)))
             else:

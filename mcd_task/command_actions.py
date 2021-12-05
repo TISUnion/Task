@@ -1,7 +1,6 @@
-import re
 import time
 
-from typing import Callable, Any, Optional, Union, List, Iterable
+from typing import Callable, Any, Optional, Union, List
 from mcdreforged.api.all import *
 
 from mcd_task.constants import PREFIX, DEBUG_MODE
@@ -61,7 +60,7 @@ def register_cmd_tree(server: PluginServerInterface):
         ).then(
             pliteral("deadline").then(
                 QuotableText("titles").then(
-                    Float("ddl").runs(exe(set_task_deadline))))
+                    Number("ddl").runs(exe(set_task_deadline))))
         ).then(
             pliteral("player").then(
                 QuotableText("name").runs(exe(info_player)))
@@ -76,7 +75,9 @@ def register_cmd_tree(server: PluginServerInterface):
         ).then(
             pliteral("list-responsibles", "list-res").then(
                 QuotableText("titles").runs(exe(list_responsible)))
-        ).on_child_error(CommandError, cmd_error, handled=True)
+        ).on_child_error(
+            CommandError, cmd_error, handled=True
+        )
     )
 
 
@@ -85,19 +86,19 @@ def register_cmd_tree(server: PluginServerInterface):
 # =================================
 
 
-def tr(key: str, *args, lang=None):
+def tr(key: str, *args, **kwargs):
     """
     Translate shortcut
     :param key:
     :param args:
-    :param lang:
+    :param kwargs:
     :return:
     """
-    return root.tr(key, *args, lang=lang)
+    return root.tr(key, *args, **kwargs)
 
 
-def rclick(msg: str, hover: str, cmd: str, action: RAction = RAction.run_command,
-           color: Optional[RColor] = None, style: Optional[RStyle] = None) -> RText:
+def rclick(msg: Union[RTextMCDRTranslation, str], hover: str, cmd: str, action: RAction = RAction.run_command,
+           color: Optional[RColor] = None, style: Optional[RStyle] = None) -> RTextBase:
     """
     RText shortcut with click events
     :param msg:
@@ -108,6 +109,13 @@ def rclick(msg: str, hover: str, cmd: str, action: RAction = RAction.run_command
     :param style:
     :return:
     """
+    if isinstance(msg, RTextMCDRTranslation):
+        rt = msg.h(hover).c(action, cmd)
+        if color is not None:
+            rt.set_color(color)
+        if style is not None:
+            rt.set_styles(style)
+        return rt
     return RText(msg, color, style).h(hover).c(action, cmd)
 
 
@@ -243,7 +251,7 @@ def formatted_time(timestamp: float, locale: Optional[str] = None) -> str:
     :param locale:
     :return:
     """
-    return time.strftime(tr("mcd_task.time_format", lang=locale), time.localtime(timestamp))
+    return time.strftime(root.server.tr("mcd_task.time_format", lang=locale), time.localtime(timestamp))
 
 
 def _add_task_button(title: str = None):
@@ -274,8 +282,8 @@ def _info_task(title: Optional[str] = None, done=False) -> Optional[RTextList]:
         if not done:
             text.append(
                 '\n', _indent_text(4),
-                rclick(tr("mcd_task.done_task_button"), tr("mcd_task.done_task_hover"), "{} list-done".format(PREFIX),
-                       color=RColor.dark_gray)
+                tr("mcd_task.done_task_button").set_hover_text(tr("mcd_task.done_task_hover")).set_click_event(
+                    RAction.run_command, "{} list-done".format(PREFIX)).set_color(RColor.dark_gray)
             )
     else:
         text.append(_task_info_flexible(target_task.full_path(), sub=False))
@@ -294,7 +302,11 @@ def _source_name(source: CommandSource):
 # =========================
 
 # Errors
-def cmd_error(source: CommandSource):
+def cmd_error(source: CommandSource, exception: CommandError):
+    if isinstance(exception, RequirementNotMet):
+        if exception.has_custom_reason():
+            source.reply(exception.get_reason().set_color(RColor.red))
+            return
     source.reply(
         rclick(tr("mcd_task.cmd_error"), tr("mcd_task.get_help"), "{} help".format(PREFIX), color=RColor.red)
     )
@@ -343,12 +355,12 @@ def info_task(source: CommandSource, title: Optional[str] = None, prefix=None, d
 
     # Prefix text
     if prefix is None:
-        prefix = tr("mcd_task.info_task_title" if title is None else "mcd_task.info_task_single_title")
-    pref_text = RText(prefix, color=RColor.green, styles=RStyle.bold)
+        prefix = tr("mcd_task.info_task_title" if title is None else "mcd_task.info_task_single_title"
+                    ).set_color(RColor.green).set_styles(RStyle.bold)
 
     add_button = _add_task_button(title)
 
-    text = RTextList(pref_text, add_button, task_list)
+    text = RTextList(prefix, add_button, task_list)
     if text is not None:
         source.reply(text)
 

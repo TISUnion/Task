@@ -1,5 +1,3 @@
-from parse import parse
-
 from mcd_task.command_actions import *
 from mcd_task.task_manager import *
 from mcd_task.constants import PLAYER_RENAMED, DATA_FOLDER
