@@ -1,0 +1,76 @@
+mcd_task:
+  help_msg: |
+    §7-----§r MCDR {1} v{2} §7-----§r
+    §d【Command Help】§r
+    §7{0} help§r Show this help message
+    §7{0} list§r List all tasks
+    §7{0} detail §6<task>§r Show detail of the specified task
+    §7{0} detail-all§r Show detail of all the tasks
+    §7{0} add §6<task> §a[desc(optional)]§r Add a new task
+    §7{0} remove §6<task>§r Delete a task
+    §7{0} rename §6<task> <new_name>§r Rename a task
+    §7{0} change §6<task> §a<desc>§r Edit a task description
+    §7{0} done §6<task>§r Mark a task as done
+    §7{0} undone §6<task>§r Mark a task as undone
+    §7{0} deadline §6<task> §b<period(d)>§r Set a task deadline
+    §7{0} player §e<player> §rShow tasks of a player
+    §7{0} priority §6<task> §9<priority>§rSet a task priority
+    §7{0} res§8ponsible §6<task> §e<name>§r Set task responsibles
+    §7{0} unres§8ponsible §6<task> §e<name> §rDel responsibles
+    §7{0} list-res§8ponsibles §6<task> §rList task responsibles
+    §d【Tips】§r
+    1. You can click task text to show detail or plus mark to add a task
+    2. All the §6<task>§r above can be replaced by §6<task>.<sub_task>§r to access the sub-tasks
+    3. §cDO NOT§r name the task with §cdot(.)§r
+    §d【Command Example】§r
+    If task §ewitch_farm§r exists, you can add a sub-task to it with this command:
+    §7!!task add §6witch_farm.floor §aAFK lay black glass§r
+  mcdr_help: Manage progression of project tasks
+  overview_help: |
+    §7{0} list§r Show full task list
+    §7{0} help§r Show plugin help message
+  perm_denied: Permission denied, requires level {}
+  get_help: Click to get command help
+  cmd_error: Command error! Click here to get help message
+  task_not_found: Task not found! Click here to browse task list
+  task_not_found_hover: Click to run {} and browse task list
+  invalid_number: Invalid number, click to reinput a number
+  resuggest_cmd_hover: Click here to refill command {}
+  rename_task_hover: Click here to rename this task
+  info_player_hover: Click here to browse player info
+  mark_task_done_hover: Click here to mark task as §edone§r
+  mark_task_undone_hover: Click here to mark task as §eundone§r
+  info_task_hover: Click here to browse task info
+  time_format: '%b.%d %Y %H:%M:%S'
+  ddl_set: Task {} now has a deadline for {} days ({})
+  task_renamed: 'Task {} has been renamed to {}: '
+  player_tasks_title: 'Player {} has {} tasks to do: '
+  info_task_title: 'Task information list: '
+  add_task_hover: Click here to add a new task
+  info_task_single_title: 'Task detailed information: '
+  done_task_button: '[Finished tasks...]'
+  done_task_hover: Click here to browse tasks marked as §edone§r
+  edit_task_hover: Click here to edit description
+  show_desc_hover: Click here to browse description
+  task_already_exist: Task already exist, click to browse task list
+  new_task_created: 'New task created: '
+  detailed_info_task_title: 'Task detailed information list: '
+  deleted_task: Deleted task {}
+  illegal_title_with_dot: "Invalid title: can't include dot"
+  done_task_list_title: 'Finished task lists: '
+  on_player_joined: You have {} outdated tasks, please hurry up!
+  on_player_renamed: Detected your nickname changed, inherited {} tasks
+  list_responsible_title: 'This task has {} responsibles: '
+  removed_responsibles_title: 'Removed {} responsibles: '
+  added_responsibles_title: 'Added {} responsibles: '
+  illegal_call: This command without argument can only be called as player
+  set_ddl_hover: Click here to set deadline
+  help_msg_suggest_hover: Click here to fill §7{}§r
+  reloaded: "[Task] Plugin reloaded"
+  overview_headline: "Top priorities:"
+  no_priority: No priorities found, check full list for more tasks
+  date_approaching: |
+    Deadline is approaching or already passed:
+    {}
+  has_a_high_priority: "This task has a high priority: {}"
+  detail_priority: "Priority: {}"

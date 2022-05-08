@@ -12,8 +12,6 @@ PREFIX = "!!task"
 DATA_FOLDER = "./config/task"
 # Config file path
 CONFIG_PATH = os.path.join(DATA_FOLDER, "config.json")
-# Default config file path in this bundle
-DEFAULT_CONFIG_PATH = "resources/default_config.json"
 # Task file path
 TASK_PATH = os.path.join(DATA_FOLDER, "mc_task.json")
 # Task path for old version of this plugin
@@ -24,7 +22,7 @@ RESG_PATH = os.path.join(DATA_FOLDER, "responsible.json")
 LOG_PATH = os.path.join(DATA_FOLDER, "task.log")
 
 # If this is True, will enable some debug options
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 # Supported languages
 LANGUAGES = ["en_us", "zh_cn"]

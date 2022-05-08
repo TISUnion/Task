@@ -1,0 +1,79 @@
+mcd_task:
+  help_msg: |
+    §7-----§r MCDR {1} v{2} §7-----§r
+    §d【指令帮助】§r
+    §7{0} §r 显示{3}
+    §7{0} help§r 显示帮助信息
+    §7{0} list§r 显示任务列表
+    §7{0} detail §6<任务名称>§r 查看任务详细信息
+    §7{0} detail-all§r 查看所有任务详细信息
+    §7{0} add §6<任务名称> §a[任务描述(可选)]§r 添加任务
+    §7{0} del §6<任务名称>§r 删除任务
+    §7{0} rename §6<旧任务名称> §e<新任务名称>§r 重命名任务
+    §7{0} change §6<任务名称> §a<新任务描述>§r 修改任务描述
+    §7{0} done §6<任务名称>§r 标注任务为已完成
+    §7{0} undone §6<任务名称>§r 标注任务为未完成
+    §7{0} deadline §6<任务名称> §b<工期(日)>§r 为任务设置工期
+    §7{0} player §3<玩家> §r查看玩家任务列表
+    §7{0} priority §6<任务名称>§9 <优先级> §r为任务设置优先级
+    §7{0} res§8ponsible §6<任务名称> §3<玩家>§r 设置任务的责任人
+    §7{0} unres§8ponsible §6<任务名称> §3<玩家> §r移除任务的责任人
+    §7{0} list-res§8ponsibles §6<任务名称> §r列出该任务的责任人
+    §d【注意事项】§r
+    1. 可用鼠标点击任务查看详情，或点击加号快速添加新任务
+    2. 上述所有 §6<任务名称>§r 可以用 §6<任务名称>.<子任务名称>§r 的形式来访问子任务
+    3. 命名子任务时，其名称§c不可包含小数点(即.)§r
+    §d【命令范例】§r
+    (若已经有 §e女巫塔§r 任务, 可使用以下命令添加子任务)
+    §7!!task add §6女巫塔.铺地板 §a挂机铺黑色玻璃§r
+  mcdr_help: 工程任务进度管理
+  overview_help: |
+    §7{0} list§r 显示完整的任务列表
+    §7{0} help§r 显示插件帮助信息
+  perm_denied: 权限不足, 你想桃子呢, 需要权限等级{}
+  get_help: 点此获取指令帮助
+  cmd_error: 指令输入有误! 点此获取帮助信息
+  task_not_found: 任务不存在! 点此查阅任务列表
+  task_not_found_hover: 点此§6查阅§e任务列表§r
+  invalid_number: 无效的数字! 点此重新输入数字
+  resuggest_cmd_hover: 点此重新补全指令 {}
+  rename_task_hover: 点此§6重命名§e任务§r
+  info_player_hover: 点此§6查阅§e玩家详情§r
+  mark_task_done_hover: 点此将任务§6设为§e完成§r
+  mark_task_undone_hover: 点此将任务§6设为§e未完成§r
+  info_task_hover: 点此查阅§e任务详情§r
+  time_format: '%Y-%m-%d %H:%M:%S'
+  ddl_set: 为任务 §e{}§r 设置了 §e{}§r 日(§e{}§r)的截止日期
+  task_renamed: '任务{}已被重命名为{}:'
+  player_tasks_title: '玩家{}肩负了{}项重任: '
+  info_task_title: '搬砖信息列表: '
+  add_task_hover: 点此§6添加§e新任务§r
+  info_task_single_title: '任务详细信息: '
+  done_task_button: '[已完成任务...]'
+  done_task_hover: 点此§6查阅§r被标记为§e完成§r的任务
+  edit_task_hover: 点此§6编辑§e任务描述§r
+  show_desc_hover: 点此查阅§e任务描述§r
+  task_already_exist: 任务已存在, 点此查阅任务列表
+  new_task_created: '创建了新的任务: '
+  detailed_info_task_title: '搬砖详细信息列表: '
+  deleted_task: 任务 {} 已删除
+  illegal_title_with_dot: '名称无效: 包含小数点'
+  done_task_list_title: '已完成任务列表: '
+  on_player_joined: 您有{}项已逾期的任务, 请赶快填坑!
+  on_player_renamed: 检测到游戏ID变更, 继承了{}项任务
+  list_responsible_title: '此任务由{}名玩家承包: '
+  removed_responsibles_title: '移除了{}名责任人: '
+  added_responsibles_title: '添加了{}名责任人: '
+  illegal_call: 不含额外参数的该指令仅可作为玩家使用
+  help_msg_suggest_hover: 点此以填入 §7{}§r
+  set_ddl_hover: 点此为任务设置工期
+  reloaded: "[Task] 插件已重载"
+  overview_headline: "当务之急: "
+  no_priority: 暂无优先事项, 可查阅完整列表获取更多任务
+  priority_set: 已将任务{}的优先级设置为{}
+  date_approaching: |
+    截止日期临近或已过:
+    §c{}§r
+  has_a_high_priority: "该任务的优先级较高: §6{}§r"
+  detail_priority: '优先级: {}'
+  priority_hover: '点此设置该任务的优先级'
