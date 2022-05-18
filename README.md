@@ -4,7 +4,7 @@
 
 A plugin shows tasks of project in progress
 
-Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.0
+Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
 
 [stext](https://github.com/TISUnion/stext) is no longer required. [MCDeamon](https://github.com/kafuuchino-desu/MCDaemon) and [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x and earlier is no longer supported
 
@@ -12,13 +12,19 @@ Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.0
 
 `!!task help` Show help message
 
-`!!task [list]` Show task list
+`!!task overview` Show task overview (also the default behavior of `!!task`)
+
+`!!task list` Show task list
 
 `!!task detail <task>` Show task detail
 
-`!!task add <task> [description]` Add a task
+`!!task list-all <task>` Show all tasks and sub-tasks
 
-`!!task del <task>` Remove a task
+`!!task list-done <task>` Show tasks which were marked as done
+
+`!!task add <task> [<description>]` Add a task
+
+`!!task remove/rm/delete/del <task>` Remove a task
 
 `!!task rename <old task> <new task>` Rename a task
 
@@ -35,8 +41,6 @@ Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.0
 `!!task res[ponsible] <task> <player>` Set responsibles for this task
 
 `!!task unres[ponsible] <task> <player>` Remove responsibles from this task
-
-`!!task list-res[ponsibles] <task>` List reponsibles of this task
 
 PS: All the `<task>` above can be replaced by `<task>.<sub-task>` to access sub-task
 
