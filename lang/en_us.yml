@@ -1,30 +1,31 @@
 mcd_task:
   help_msg: |
-    §7-----§r MCDR {1} v{2} §7-----§r
+    §7-----§r MCDR {name} v{ver} §7-----§r
     §d【Command Help】§r
-    §7{0} help§r Show this help message
-    §7{0} list§r List all tasks
-    §7{0} detail §6<task>§r Show detail of the specified task
-    §7{0} detail-all§r Show detail of all the tasks
-    §7{0} add §6<task> §a[desc(optional)]§r Add a new task
-    §7{0} remove §6<task>§r Delete a task
-    §7{0} rename §6<task> <new_name>§r Rename a task
-    §7{0} change §6<task> §a<desc>§r Edit a task description
-    §7{0} done §6<task>§r Mark a task as done
-    §7{0} undone §6<task>§r Mark a task as undone
-    §7{0} deadline §6<task> §b<period(d)>§r Set a task deadline
-    §7{0} player §e<player> §rShow tasks of a player
-    §7{0} priority §6<task> §9<priority>§rSet a task priority
-    §7{0} res§8ponsible §6<task> §e<name>§r Set task responsibles
-    §7{0} unres§8ponsible §6<task> §e<name> §rDel responsibles
-    §7{0} list-res§8ponsibles §6<task> §rList task responsibles
+    §7{pre} overview§r Show task overview
+    §7{pre} help§r Show this help message
+    §7{pre} list§r List all tasks
+    §7{pre} reload§r Reload this plugin
+    §7{pre} detail §e<task>§r Show detail of the specified task
+    §7{pre} list-all§r List full map of the tasks
+    §7{pre} add §e<task> §a[desc(optional)]§r Add a new task
+    §7{pre} remove §e<task>§r Delete a task
+    §7{pre} rename §e<task> <new_name>§r Rename a task
+    §7{pre} change §e<task> §a<desc>§r Edit a task description
+    §7{pre} done §e<task>§r Mark a task as done
+    §7{pre} undone §e<task>§r Mark a task as undone
+    §7{pre} deadline §e<task> §c<period(d)>§r Set a task deadline
+    §7{pre} player §e<player> §rShow tasks of a player
+    §7{pre} priority §e<task> §6<priority>§rSet a task priority
+    §7{pre} res§8ponsible §e<task> §3<name>§r Set task responsibles
+    §7{pre} unres§8ponsible §e<task> §3<name> §rDel responsibles
     §d【Tips】§r
-    1. You can click task text to show detail or plus mark to add a task
-    2. All the §6<task>§r above can be replaced by §6<task>.<sub_task>§r to access the sub-tasks
+    1. Click task text to show detail or plus mark to add a task
+    2. Use §e<task>.<sub_task>§r to access the sub-tasks
     3. §cDO NOT§r name the task with §cdot(.)§r
     §d【Command Example】§r
-    If task §ewitch_farm§r exists, you can add a sub-task to it with this command:
-    §7!!task add §6witch_farm.floor §aAFK lay black glass§r
+    You can add a sub-task to task §ewitch_farm§r with this command:
+    §7{pre} add §ewitch_farm.floor §aAFK lay black glass§r
   mcdr_help: Manage progression of project tasks
   overview_help: |
     §7{0} list§r Show full task list
@@ -37,21 +38,20 @@ mcd_task:
   invalid_number: Invalid number, click to reinput a number
   resuggest_cmd_hover: Click here to refill command {}
   rename_task_hover: Click here to rename this task
-  info_player_hover: Click here to browse player info
+  info_player_hover: Click here to §6browse §eplayer info§r
   mark_task_done_hover: Click here to mark task as §edone§r
   mark_task_undone_hover: Click here to mark task as §eundone§r
-  info_task_hover: Click here to browse task info
   time_format: '%b.%d %Y %H:%M:%S'
-  ddl_set: Task {} now has a deadline for {} days ({})
-  task_renamed: 'Task {} has been renamed to {}: '
-  player_tasks_title: 'Player {} has {} tasks to do: '
-  info_task_title: 'Task information list: '
-  add_task_hover: Click here to add a new task
-  info_task_single_title: 'Task detailed information: '
+  ddl_set: "Task deadline has been changed"
+  task_renamed: 'Task §e{}§a§l has been renamed: '
+  player_tasks_title: 'Player §3{}§a§l has §3{}§a§l tasks to do: '
+  list_task_title: 'Task information list: '
+  add_task_hover: Click here to §6add§e a new task§r
+  add_sub_task_hover: Click here to §6add§e a new sub-task§r
+  info_task_title: 'Task detailed information: '
   done_task_button: '[Finished tasks...]'
   done_task_hover: Click here to browse tasks marked as §edone§r
-  edit_task_hover: Click here to edit description
-  show_desc_hover: Click here to browse description
+  info_task_hover: Click here to §6browse§r task §e{} §rdetail
   task_already_exist: Task already exist, click to browse task list
   new_task_created: 'New task created: '
   detailed_info_task_title: 'Task detailed information list: '
@@ -60,17 +60,30 @@ mcd_task:
   done_task_list_title: 'Finished task lists: '
   on_player_joined: You have {} outdated tasks, please hurry up!
   on_player_renamed: Detected your nickname changed, inherited {} tasks
-  list_responsible_title: 'This task has {} responsibles: '
-  removed_responsibles_title: 'Removed {} responsibles: '
-  added_responsibles_title: 'Added {} responsibles: '
+  list_responsible_title: 'This task has §3{}§a§l responsibles: '
+  removed_responsibles_title: 'Removed §3{}§a§l responsibles: '
+  added_responsibles_title: 'Added §3{}§a§l responsibles: '
   illegal_call: This command without argument can only be called as player
-  set_ddl_hover: Click here to set deadline
+  set_ddl_hover: Click here to §6set§e deadline
   help_msg_suggest_hover: Click here to fill §7{}§r
-  reloaded: "[Task] Plugin reloaded"
+  reloaded: "[Task] §a§lPlugin reloaded§r"
   overview_headline: "Top priorities:"
   no_priority: No priorities found, check full list for more tasks
   date_approaching: |
     Deadline is approaching or already passed:
     {}
   has_a_high_priority: "This task has a high priority: {}"
-  detail_priority: "Priority: {}"
+  detail_priority: "Priority: §6{}  §r[✎]"
+  priority_hover: Click to §6set§e priority of this task
+  priority_set: Task priority has been changed
+  detail_desc: 'Task description: §7{}  §r[✎]'
+  desc_hover: Click here to §6edit§e description
+  detail_deadline: "Deadline: §c{}  §r[✎]"
+  detail_sub: "Sub-tasks: "
+  not_set: Not set yet
+  changed_desc_title: Task description changed
+  done_task_title: Task was marked as done
+  undone_task_title: Task was marked as undone
+  detail_res: "Responsibles: §5§l[+]§r"
+  add_res_hover: Click to §6add§e responsibles§r to this task
+  rm_res_hover: Click to §6remove§e {} as reponsible§r from this task

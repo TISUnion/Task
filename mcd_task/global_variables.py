@@ -2,10 +2,7 @@ import logging
 import re
 import types
 from typing import Optional, Union, TYPE_CHECKING
-
-from mcdreforged.minecraft.rtext import RTextBase, RTextList, RText, RAction
-from mcdreforged.plugin.server_interface import ServerInterface
-from mcdreforged.utils.logger import MCDReforgedLogger
+from mcdreforged.api.all import RTextBase, RTextList, RText, RAction, ServerInterface, MCDReforgedLogger
 
 from mcd_task.config import Config
 from mcd_task.constants import LOG_PATH, PREFIX, DEBUG_MODE
@@ -48,6 +45,8 @@ class GlobalVariables:
 
     @classmethod
     def tr(cls, key: Optional[str], *args, **kwargs):
+        if not key.startswith('mcd_task.'):
+            key = f"mcd_task.{key}"
         return cls.server.rtr(key, *args, **kwargs)
 
     @classmethod

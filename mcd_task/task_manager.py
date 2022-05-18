@@ -2,18 +2,16 @@ import json
 import os
 import time
 
-from abc import ABC
 from copy import copy
 from typing import List, Dict, Tuple, Any, Union, Optional
 
 from mcdreforged.api.utils import Serializable, deserialize
 
 from mcd_task.exceptions import TaskNotFound, DuplicatedTask
-from mcd_task.utils import TitleList
+from mcd_task.utils import TitleList, formatted_time
 from mcd_task.constants import TASK_PATH, DEBUG_MODE
 from mcd_task.responsible import ResponsibleManager
 from mcd_task.global_variables import GlobalVariables
-
 
 SUB_TASKS = 'sub_tasks'
 
@@ -33,7 +31,7 @@ class TaskBase(Serializable):
 
     @property
     def titles(self):
-        return TitleList(self.title)
+        return self.full_path()
 
     @property
     def child_map(self) -> Dict[str, 'Task']:
@@ -45,6 +43,18 @@ class TaskBase(Serializable):
     @property
     def child_titles(self) -> List[str]:
         return list(self.child_map.keys())
+
+    @property
+    def is_not_empty(self):
+        if self.deadline != 0:
+            return True
+        if self.description != '':
+            return True
+        if self.priority is not None:
+            return True
+        if len(self.responsibles) > 0:
+            return True
+        return False
 
     def full_path(self, titles: 'TitleList' = TitleList()) -> 'TitleList':
         raise NotImplementedError('Not implemented method: TaskBase.full_path()')
@@ -60,7 +70,7 @@ class TaskBase(Serializable):
     def next_layer(self, titles: 'TitleList') -> Tuple[str, TitleList]:
         next_layer_title = titles.pop_head()
         if next_layer_title not in next_layer_title:
-            raise TaskNotFound(self.full_path().copy().append(next_layer_title))
+            raise TaskNotFound(self.titles.copy().append(next_layer_title))
         return next_layer_title, titles
 
     def __add_task(self, data: dict):
@@ -86,7 +96,7 @@ class TaskBase(Serializable):
         return self
 
     @classmethod
-    def deserialize(cls, data: dict, **kwargs) -> "TaskBase":
+    def deserialize(cls, data: dict, **kwargs):
         GlobalVariables.debug(data)
         sub_tasks = copy(data.get('sub_tasks', []))
         if not isinstance(sub_tasks, list):
@@ -108,7 +118,7 @@ class TaskBase(Serializable):
                 undones.append(t)
         return undones, dones
 
-    def __getitem__(self, titles: Union[TitleList, str]) -> 'TaskBase':
+    def __getitem__(self, titles: Union[TitleList, str]) -> Union['Task', 'TaskBase']:
         if isinstance(titles, str):
             titles = TitleList(titles)
         if titles.is_empty:
@@ -139,11 +149,12 @@ class TaskBase(Serializable):
             result += item.seek_for_item_with_deadline_approaching(sort=False)
         return sorted(result, key=lambda task: task.deadline, reverse=False) if sort else result
 
+    @property
+    def responsibles(self):
+        return GlobalVariables.task_manager.responsible_manager.get_responsibles(self.titles)
+
     def __str__(self):
         return str(self.serialize())
-
-    def __hash__(self):
-        return has
 
 
 class Task(TaskBase):
@@ -155,14 +166,26 @@ class Task(TaskBase):
             self.title = ''
             self.done = False
             self.description = ''
-            self.sub_tasks = []     # type: List[Task]
+            self.sub_tasks = []  # type: List[Task]
+
+    def get_elements(self, element_name: str):
+        mappings = {
+            'name': str(self.titles),
+            'desc': self.description,
+            'priority': '' if self.priority is None else self.priority,
+            'deadline': '' if self.deadline == 0 else formatted_time(self.deadline)
+        }
+        return mappings.get(element_name)
 
 
 class TaskManager(TaskBase):
     title: str = "TaskManager"
-    __responsible_manager = ResponsibleManager()
+    __responsible_manager = None
 
-    def get_responsible_manager(self):
+    @property
+    def responsible_manager(self):
+        if self.__responsible_manager is None:
+            self.__responsible_manager = ResponsibleManager(self)
         return self.__responsible_manager
 
     def save(self):
@@ -179,7 +202,7 @@ class TaskManager(TaskBase):
             js = json.load(fp)
         manager = cls.deserialize(js)
         GlobalVariables.debug(manager.serialize())
-        manager.get_responsible_manager().load()
+        manager.responsible_manager.load()
         return manager
 
     def exists(self, titles: TitleList) -> bool:
@@ -198,7 +221,7 @@ class TaskManager(TaskBase):
     def full_path(self, titles: 'TitleList' = TitleList()) -> 'TitleList':
         return titles
 
-#   =========================
+    #   =========================
 
     def add_task(self, titles: 'TitleList', desc: str = '', should_save=True) -> None:
         super(TaskManager, self).add_task(titles, desc)
@@ -214,7 +237,7 @@ class TaskManager(TaskBase):
         except KeyError:
             raise TaskNotFound(titles.copy(), father_delete.full_path().copy())
         father_delete.sub_tasks.remove(task)
-        self.__responsible_manager.remove_task(titles)
+        self.responsible_manager.remove_task(titles)
 
         if should_save:
             self.save()
@@ -224,7 +247,7 @@ class TaskManager(TaskBase):
         new_titles = titles.copy()
         new_titles.pop_tail()
         new_titles.append(new_title)
-        self.__responsible_manager.rename_task(titles, new_title)
+        self.responsible_manager.rename_task(titles, new_title)
         if should_save:
             self.save()
 
@@ -252,24 +275,24 @@ class TaskManager(TaskBase):
         num = 0
         for r in res:
             try:
-                self.__responsible_manager.add_work(r, titles, should_save=False)
+                self.responsible_manager.add_work(r, titles, should_save=False)
             except DuplicatedTask:
                 pass
             else:
                 num += 1
-        self.__responsible_manager.save()
+        self.responsible_manager.save()
         return num
 
     def rm_responsible(self, titles: TitleList, *res):
         removed = set()
         for r in res:
             try:
-                self.__responsible_manager.rm_work(r, titles, should_save=False)
+                self.responsible_manager.rm_work(r, titles, should_save=False)
             except TaskNotFound:
                 pass
             else:
                 removed.add(r)
-        self.__responsible_manager.save()
+        self.responsible_manager.save()
         return removed
 
     def set_perm(self, titles: TitleList, perm_level: int, should_save=True) -> None:
@@ -282,4 +305,3 @@ class TaskManager(TaskBase):
         self[titles].priority = priority
         if should_save:
             self.save()
-

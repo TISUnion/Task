@@ -1,4 +1,9 @@
+import time
 from typing import Optional, Union, List
+
+from mcdreforged.command.command_source import CommandSource, PlayerCommandSource
+
+from mcd_task.global_variables import GlobalVariables
 
 
 class TitleList:
@@ -53,3 +58,20 @@ class TitleList:
     # No longer support python 2.x and MCDeamon so no __unicode__ method
     def __str__(self) -> str:
         return '.'.join(self.titles)
+
+
+def formatted_time(timestamp: float, locale: Optional[str] = None) -> str:
+    """
+    Format time text with specified locale
+    :param timestamp:
+    :param locale:
+    :return:
+    """
+    return time.strftime(GlobalVariables.server.tr("mcd_task.time_format", lang=locale), time.localtime(timestamp))
+
+
+def source_name(source: CommandSource):
+    if isinstance(source, PlayerCommandSource):
+        return source.player
+    else:
+        return source.__class__.__name__

@@ -1,4 +1,3 @@
-from mcd_task import global_variables
 from mcd_task.command_actions import *
 from mcd_task.global_variables import GlobalVariables
 from mcd_task.task_manager import *
@@ -13,7 +12,6 @@ def on_info(server: PluginServerInterface, info: Info):
         psd = parse(PLAYER_RENAMED, info.content)
         if psd is not None:
             inherit_responsible(info, **psd.named)
-    server.as_plugin_server_interface()
 
     if info.is_user and DEBUG_MODE:
         if info.content.startswith('!!task debug '):
@@ -22,7 +20,7 @@ def on_info(server: PluginServerInterface, info: Info):
             if args[2] == 'base-title':
                 info.get_command_source().reply('Manager title is {}'.format(GlobalVariables.task_manager.title))
             elif args[2] == 'full-path' and len(args) == 4:
-                info.get_command_source().reply(GlobalVariables.task_manager[args[3]].full_path())
+                info.get_command_source().reply(GlobalVariables.task_manager[args[3]].titles)
             elif args[2] == 'player-join':
                 on_player_joined(server, info.player, info)
             elif args[2] == 'player-renamed' and len(args) == 5:
@@ -38,13 +36,12 @@ def on_info(server: PluginServerInterface, info: Info):
 def on_player_joined(server: PluginServerInterface, player: str, info: Info):
     player_tasks = []
     now_time = float(time.time())
-    for t in GlobalVariables.task_manager.get_responsible_manager()[player]:
+    for t in GlobalVariables.task_manager.responsible_manager[player]:
         task = GlobalVariables.task_manager[t]
         if not task.done and now_time > task.deadline != 0:
             player_tasks.append(task)
     if len(player_tasks) > 0:
         task_timed_out(server, player, player_tasks)
-    info.get_server()
 
 
 def on_load(server: PluginServerInterface, prev_module):

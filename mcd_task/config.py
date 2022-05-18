@@ -1,38 +1,21 @@
 from typing import Any, Dict, Optional
 
-from mcdreforged.api.all import PluginServerInterface, Serializable, deserialize
+from mcdreforged.api.all import PluginServerInterface, Serializable
 
 from mcd_task.constants import CONFIG_PATH, DEBUG_MODE
 
 
-class Permission(Serializable):
-    help: int = 0
-    list: int = 0
-    detail: int = 0
-    detail_all: int = 0
-    list_done: int = 0
-    add: int = 1
-    remove: int = 1
-    rename: int = 1
-    change: int = 1
-    done: int = 1
-    undone: int = 1
-    deadline: int = 1
-    player: int = 2
-    responsible: int = 2
-    unresponsible: int = 2
-    list_responsibles: int = 1
-    priority: int = 1
-
-    @classmethod
-    def deserialize(cls, data: dict, **kwargs):
-        for key, value in data.copy().items():
-            data[key.replace("-", "_")] = value
-        return deserialize(data, cls, **kwargs)
-
-
 class Config(Serializable):
-    permission: Permission = Permission.get_default()
+    permission: Dict[str, int] = {
+        "help":  0,
+        "list": 0,
+        "detail": 0,
+        "list-all": 0,
+        "list-done": 0,
+        "player": 2,
+        "responsible": 2,
+        "unresponsible": 2
+    }
     detect_player_rename: bool = True
     default_overview_instead_of_list: bool = True
     overview_deadline_warning_threshold: int = 1  # days
@@ -69,7 +52,7 @@ class Config(Serializable):
         return ret
 
     def get_permission(self, cmd: str):
-        return self.permission.serialize().get(cmd.replace('-', '_'), 0)
+        return self.permission.get(cmd, 1)
 
     @staticmethod
     def __set_key_to_dict(target_dict: Dict[str, Any], key: str, value: Any):

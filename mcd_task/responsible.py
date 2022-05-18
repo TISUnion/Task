@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Set, Union
+from typing import Dict, Set, Union, TYPE_CHECKING, Iterator
 
 from parse import parse
 
@@ -9,10 +9,15 @@ from mcd_task.utils import TitleList
 from mcd_task.exceptions import DuplicatedTask, TaskNotFound
 
 
+if TYPE_CHECKING:
+    from mcd_task.task_manager import TaskManager, Task
+
+
 class ResponsibleManager:
-    def __init__(self):
+    def __init__(self, task_manager: "TaskManager"):
         self.path = RESG_PATH   # type: str
         self.player_work = {}   # type: Dict[str, Set[str]]
+        self.task_manager = task_manager
 
     def rename_player(self, old_name: str, new_name: str, should_save=True):
         value = self.player_work.pop(old_name)
@@ -94,5 +99,7 @@ class ResponsibleManager:
                 ret.add(key)
         return list(ret)
 
-    def __getitem__(self, player: str) -> Set[str]:
-        return self.player_work.get(player, set())
+    def __getitem__(self, player: str) -> Iterator["Task"]:
+        task_titles = self.player_work.get(player, set())
+        for titles in task_titles:
+            yield self.task_manager[titles]

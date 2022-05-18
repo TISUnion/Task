@@ -22,7 +22,7 @@ RESG_PATH = os.path.join(DATA_FOLDER, "responsible.json")
 LOG_PATH = os.path.join(DATA_FOLDER, "task.log")
 
 # If this is True, will enable some debug options
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 # Supported languages
 LANGUAGES = ["en_us", "zh_cn"]
