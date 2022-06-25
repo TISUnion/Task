@@ -118,7 +118,7 @@ def info_responsibles(task: Task, indent=4):
 
 def sub_task_title_text(task: Task, indent=4):
     text = []
-    for sub in task.sub_tasks:
+    for sub in task.sorted_sub_tasks:
         text.append(indent_text(indent) + title_text(sub))
         if len(sub.sub_tasks) > 0:
             text.append(sub_task_title_text(sub, indent + 4))

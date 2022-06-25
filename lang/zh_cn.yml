@@ -1,6 +1,7 @@
 mcd_task:
   help_msg: |
     §7-----§r MCDR {name} v{ver} §7-----§r
+    轻松地管理服务器任务
     §d【指令帮助】§r
     §7{pre} overview§r 显示任务概览
     §7{pre} help§r 显示帮助信息

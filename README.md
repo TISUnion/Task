@@ -20,11 +20,9 @@ Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
 
 `!!task list-all <task>` Show all tasks and sub-tasks
 
-`!!task list-done <task>` Show tasks which were marked as done
-
 `!!task add <task> [<description>]` Add a task
 
-`!!task remove/rm/delete/del <task>` Remove a task
+`!!task remove`/`rm`/`delete`/`del <task>` Remove a task
 
 `!!task rename <old task> <new task>` Rename a task
 
@@ -34,13 +32,13 @@ Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
 
 `!!task undone <task>` Mark task as undone
 
-`!!task deadline <task> <period: day>` Set deadline for the task
+`!!task deadline <task> <period: day>`/`clear` Set or clear deadline for the task
 
 `!!task player <task>` Show player task list
 
 `!!task res[ponsible] <task> <player>` Set responsibles for this task
 
-`!!task unres[ponsible] <task> <player>` Remove responsibles from this task
+`!!task unres[ponsible] <task> <player>`/`-all` Remove responsibles from this task
 
 PS: All the `<task>` above can be replaced by `<task>.<sub-task>` to access sub-task
 

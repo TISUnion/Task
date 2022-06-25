@@ -1,6 +1,7 @@
 mcd_task:
   help_msg: |
     §7-----§r MCDR {name} v{ver} §7-----§r
+    Manage tasks in your sever easily
     §d【Command Help】§r
     §7{pre} overview§r Show task overview
     §7{pre} help§r Show this help message

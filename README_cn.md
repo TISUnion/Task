@@ -20,11 +20,9 @@
 
 `!!task list-all` 显示所有任务和它们的子任务
 
-`!!task list-done` 显示已被标记为完成的任务列表
-
 `!!task add <任务名称> [任务描述]` 添加任务
 
-`!!task remove/rm/delete/rm <任务名称]>` 删除任务
+`!!task remove`/`rm`/`delete`/`rm <任务名称]>` 删除任务
 
 `!!task rename <旧任务名称> <新任务名称>` 重命名任务
 
@@ -34,13 +32,13 @@
 
 `!!task undone <任务名称>` 标注任务为未完成
 
-`!!task deadline <任务名称> <工期:日数>` 为任务设置工期
+`!!task deadline <任务名称> <工期:日数>`/`clear` 为任务设置工期或者清除工期
 
 `!!task player <任务名称>` 查阅玩家任务列表
 
 `!!task res[ponsible] <任务名称> <玩家>` 设置任务的责任人
 
-`!!task unres[ponsible] <任务名称> <玩家>` 移除任务的责任人
+`!!task unres[ponsible] <任务名称> <玩家>`/`-all` 移除任务的责任人或者移除所有责任人
 
 注: 上述所有 `[任务名称]` 可以用 `[任务名称].[子任务名称]` 的形式来访问子任务
 
