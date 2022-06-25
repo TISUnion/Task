@@ -40,7 +40,7 @@ def list_done_task_button():
 
 def done_button(task: Task):
     # Done button
-    click_event_to_do = 'undone' if task.done else 'done'
+    click_event_to_do = 'undone' if task.is_done else 'done'
     return RText("⬛" if task.done else "⬜", RColor.dark_gray if task.done else RColor.white).h(
         tr(f"mark_task_{click_event_to_do}_hover")).c(
         RAction.run_command, "{} {} {}".format(PREFIX, click_event_to_do, task.titles)
@@ -75,7 +75,7 @@ def title_text(task: Task, display_full_path=False, with_edit_button=False, inde
         this_title = target_title.pop_tail()
         title_text_list.append(
             RText(this_title,
-                  RColor.dark_gray if GlobalVariables.task_manager[this_title_full].is_done else RColor.yellow).c(
+                  RColor.gray if GlobalVariables.task_manager[this_title_full].is_done else RColor.yellow).c(
                 RAction.run_command, f'{PREFIX} detail {this_title_full}').h(tr('info_task_hover', this_title_full))
         )
     title_text_list.reverse()

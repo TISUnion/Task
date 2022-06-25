@@ -8,10 +8,10 @@ mcd_task:
     §7{pre} reload§r Reload this plugin
     §7{pre} detail §e<task>§r Show detail of the specified task
     §7{pre} list-all§r List full map of the tasks
-    §7{pre} add §e<task> §a[desc(optional)]§r Add a new task
+    §7{pre} add §e<task> §2[desc(optional)]§r Add a new task
     §7{pre} remove §e<task>§r Delete a task
     §7{pre} rename §e<task> <new_name>§r Rename a task
-    §7{pre} change §e<task> §a<desc>§r Edit a task description
+    §7{pre} change §e<task> §2<desc>§r Edit a task description
     §7{pre} done §e<task>§r Mark a task as done
     §7{pre} undone §e<task>§r Mark a task as undone
     §7{pre} deadline §e<task> §c<period(d)>§r Set a task deadline
@@ -25,7 +25,7 @@ mcd_task:
     3. §cDO NOT§r name the task with §cdot(.)§r
     §d【Command Example】§r
     You can add a sub-task to task §ewitch_farm§r with this command:
-    §7{pre} add §ewitch_farm.floor §aAFK lay black glass§r
+    §7{pre} add §ewitch_farm.floor §2AFK lay black glass§r
   mcdr_help: Manage progression of project tasks
   overview_help: |
     §7{0} list§r Show full task list
@@ -76,7 +76,7 @@ mcd_task:
   detail_priority: "Priority: §6{}  §r[✎]"
   priority_hover: Click to §6set§e priority of this task
   priority_set: Task priority has been changed
-  detail_desc: 'Task description: §7{}  §r[✎]'
+  detail_desc: 'Task description: §2{}  §r[✎]'
   desc_hover: Click here to §6edit§e description
   detail_deadline: "Deadline: §c{}  §r[✎]"
   detail_sub: "Sub-tasks: "

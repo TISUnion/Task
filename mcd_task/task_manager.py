@@ -3,7 +3,7 @@ import os
 import time
 
 from copy import copy
-from typing import List, Dict, Tuple, Any, Union, Optional
+from typing import List, Dict, Tuple, Any, Union, Optional, Iterable
 
 from mcdreforged.api.utils import Serializable, deserialize
 
@@ -127,6 +127,11 @@ class TaskBase(Serializable):
                 undones.append(t)
         return undones, dones
 
+    @property
+    def sorted_sub_tasks(self):
+        undones, dones = self.split_sub_tasks_by_done()
+        return sort_by_title(undones) + sort_by_title(dones)
+
     def __getitem__(self, titles: Union[TitleList, str]) -> Union['Task', 'TaskBase']:
         if isinstance(titles, str):
             titles = TitleList(titles)
@@ -141,7 +146,7 @@ class TaskBase(Serializable):
         result = []
         for item in self.sub_tasks:
             if isinstance(item.priority, int):
-                if with_done or not item.done:
+                if with_done or not item.is_done:
                     result.append(item)
                     GlobalVariables.debug(f'Priority task found: {item.full_path()}')
             result += item.seek_for_item_with_priority(sort=False)
@@ -152,7 +157,7 @@ class TaskBase(Serializable):
         for item in self.sub_tasks:
             if item.deadline != 0 and item.deadline - \
                     time.time() < 3600 * 24 * GlobalVariables.config.overview_deadline_warning_threshold:
-                if with_done or not item.done:
+                if with_done or not item.is_done:
                     result.append(item)
                     GlobalVariables.debug(f'Deadline task found: {item.full_path()}')
             result += item.seek_for_item_with_deadline_approaching(sort=False)
@@ -318,6 +323,11 @@ class TaskManager(TaskBase):
         self[titles].priority = priority
         if should_save:
             self.save()
+
+
+def sort_by_title(unsorted_task_list: Iterable[Task]):
+    return sorted(unsorted_task_list, key=lambda task: task.title)
+
 
 if __name__ == "__main__":
     print(SUB_TASKS)

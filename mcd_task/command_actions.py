@@ -9,7 +9,7 @@ from mcd_task.exceptions import TaskNotFound
 from mcd_task.task_manager import Task
 from mcd_task.utils import formatted_time, source_name, TitleList
 from mcd_task.rtext_components import tr, info_elements, title_text, info_responsibles, add_task_button, \
-    list_done_task_button, EditButtonType, info_sub_tasks, indent_text, sub_task_title_text
+    EditButtonType, info_sub_tasks, sub_task_title_text
 
 
 # ===============================
@@ -59,7 +59,6 @@ def register_cmd_tree(server: PluginServerInterface):
             ensure_task_exist_quotable_text().runs(lambda src, ctx: info_task(src, title=ctx['title']))
         ),
         permed_literal('list-all').runs(lambda src: all_tasks_detail(src)),
-        permed_literal('list-done').runs(lambda src: list_done(src)),
         permed_literal('add').then(
             ensure_task_not_exist_quotable_text().runs(lambda src, ctx: add_task(src, ctx['title'])).then(
                 GreedyText('description').runs(lambda src, ctx: add_task(src, ctx['title'], ctx['description']))
@@ -196,18 +195,15 @@ def info_task(source: CommandSource, title: str, headline_override: Union[None, 
 
 
 # Others
-def list_task(source: CommandSource, done=False):
-    headline = tr("done_task_list_title" if done else 'list_task_title').set_styles(RStyle.bold).set_color(
+def list_task(source: CommandSource):
+    headline = tr('list_task_title').set_styles(RStyle.bold).set_color(
         RColor.green) + ' ' + add_task_button()
     task_list_text = []
-    for task in GlobalVariables.task_manager.sub_tasks:
-        if task.done is done:
-            task_list_text.append(title_text(task, display_not_empty_mark=True))
+    for task in GlobalVariables.task_manager.sorted_sub_tasks:
+        task_list_text.append(title_text(task, display_not_empty_mark=True))
     task_list_text = RTextBase.join('\n', task_list_text)
     text = [headline, task_list_text]
-    if not done:
-        text.append(indent_text(4) + list_done_task_button())
-    source.reply(RText.join('\n', [headline, task_list_text, indent_text(4) + list_done_task_button()]))
+    source.reply(RText.join('\n', text))
 
 
 def set_task_deadline(source: CommandSource, titles: str, ddl: str) -> None:
@@ -295,7 +291,7 @@ def add_task(source: CommandSource, titles: str, desc: str = ''):
 def all_tasks_detail(source: CommandSource):
     task_details = [tr("detailed_info_task_title").set_color(RColor.green).set_styles(RStyle.bold) + ' ' +
                     add_task_button()]
-    for task in GlobalVariables.task_manager.sub_tasks:
+    for task in GlobalVariables.task_manager.sorted_sub_tasks:
         task_details.append(title_text(task, include_sub=False, display_not_empty_mark=True))
         if len(task.sub_tasks) > 0:
             task_details.append(sub_task_title_text(task, indent=8))
@@ -336,10 +332,6 @@ def set_undone(source: CommandSource, titles: str) -> None:
     GlobalVariables.task_manager.undone_task(TitleList(titles))
     info_task(source, title=titles, headline_override='undone_task_title')
     GlobalVariables.log(f"{source_name(source)} marked task {titles} as undone")
-
-
-def list_done(source: CommandSource):
-    list_task(source, done=True)
 
 
 def set_responsible(source: CommandSource, titles: str, players: Optional[str] = None) -> None:
