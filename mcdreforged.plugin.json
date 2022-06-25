@@ -1,6 +1,6 @@
 {
     "id": "mcd_task",
-    "version": "2.3.0-alpha.2+build.59",
+    "version": "2.3.0-alpha.3+build.60",
     "name": "Task",
     "description": "A plugin to show tasks of project in progress",
     "author": [
