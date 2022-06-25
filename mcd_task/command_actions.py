@@ -276,10 +276,10 @@ def reload_self(source: CommandSource):
 
 def show_help(source: CommandSource):
     meta = GlobalVariables.server.get_self_metadata()
-    ver = '.'.join(meta.version.component)
+    ver = '.'.join(map(lambda x: str(x), meta.version.component))
     if meta.version.pre is not None:
         ver += '-' + str(meta.version.pre)
-    source.reply(tr('help_msg', pre=PREFIX, name=meta.name, ver=str(meta.version)).set_translator(GlobalVariables.htr))
+    source.reply(tr('help_msg', pre=PREFIX, name=meta.name, ver=ver).set_translator(GlobalVariables.htr))
 
 
 def add_task(source: CommandSource, titles: str, desc: str = ''):
