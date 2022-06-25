@@ -13,7 +13,8 @@ from mcd_task.constants import TASK_PATH, DEBUG_MODE
 from mcd_task.responsible import ResponsibleManager
 from mcd_task.global_variables import GlobalVariables
 
-SUB_TASKS = 'sub_tasks'
+
+SUB_TASKS = 'rue'
 
 
 class TaskBase(Serializable):
@@ -25,9 +26,13 @@ class TaskBase(Serializable):
     permission: int = 0
     priority: Optional[int] = None
 
+    for key, value in locals().copy().items():
+        if value is sub_tasks:
+            globals()['SUB_TASKS'] = key
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._father = None
+        self._father: Optional["TaskBase"] = None
 
     @property
     def titles(self):
@@ -55,6 +60,10 @@ class TaskBase(Serializable):
         if len(self.responsibles) > 0:
             return True
         return False
+
+    @property
+    def is_done(self):
+        return self.done or self._father.is_done
 
     def full_path(self, titles: 'TitleList' = TitleList()) -> 'TitleList':
         raise NotImplementedError('Not implemented method: TaskBase.full_path()')
@@ -98,13 +107,13 @@ class TaskBase(Serializable):
     @classmethod
     def deserialize(cls, data: dict, **kwargs):
         GlobalVariables.debug(data)
-        sub_tasks = copy(data.get('sub_tasks', []))
+        sub_tasks = copy(data.get(SUB_TASKS, []))
         if not isinstance(sub_tasks, list):
             raise TypeError(
                 'Unsupported input type: expected class "{}" but found data with class "{}"'.format(
                     list.__name__, type(data).__name__
                 ))
-        data['sub_tasks'] = []
+        data[SUB_TASKS] = []
         this_task = deserialize(data=data, cls=cls, **kwargs)
         this_task.create_sub_tasks_from_serialized_data(sub_tasks)
         return this_task
@@ -193,6 +202,10 @@ class TaskManager(TaskBase):
         GlobalVariables.debug(f'Saving data: {data}')
         with open(TASK_PATH, 'w', encoding='utf8') as fp:
             fp.write(data)
+
+    @property
+    def is_done(self):
+        return False
 
     @classmethod
     def load(cls):
@@ -305,3 +318,6 @@ class TaskManager(TaskBase):
         self[titles].priority = priority
         if should_save:
             self.save()
+
+if __name__ == "__main__":
+    print(SUB_TASKS)

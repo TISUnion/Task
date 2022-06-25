@@ -87,3 +87,4 @@ mcd_task:
   detail_res: "责任人: §5§l[+]§r"
   add_res_hover: 点击为该任务§6添加§e责任人§r
   rm_res_hover: 点击自此任务§6移除§e责任人 {}§r
+  ddl_cleared: 已移除任务的截止日期要求

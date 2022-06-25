@@ -75,7 +75,7 @@ def title_text(task: Task, display_full_path=False, with_edit_button=False, inde
         this_title = target_title.pop_tail()
         title_text_list.append(
             RText(this_title,
-                  RColor.dark_gray if GlobalVariables.task_manager[this_title_full].done else RColor.yellow).c(
+                  RColor.dark_gray if GlobalVariables.task_manager[this_title_full].is_done else RColor.yellow).c(
                 RAction.run_command, f'{PREFIX} detail {this_title_full}').h(tr('info_task_hover', this_title_full))
         )
     title_text_list.reverse()

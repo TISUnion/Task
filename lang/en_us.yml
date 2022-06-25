@@ -87,3 +87,4 @@ mcd_task:
   detail_res: "Responsibles: §5§l[+]§r"
   add_res_hover: Click to §6add§e responsibles§r to this task
   rm_res_hover: Click to §6remove§e {} as reponsible§r from this task
+  ddl_cleared: Task deadline has been removed

@@ -86,6 +86,8 @@ def register_cmd_tree(server: PluginServerInterface):
         ),
         permed_literal('deadline').then(
             ensure_task_exist_quotable_text().then(
+                Literal('clear').runs(lambda src, ctx: clear_task_deadline(src, ctx['title']))
+            ).then(
                 Number('days').runs(lambda src, ctx: set_task_deadline(src, ctx['title'], ctx['days']))
             )
         ),
@@ -99,6 +101,8 @@ def register_cmd_tree(server: PluginServerInterface):
         ),
         permed_literal("unresponsible", "unres").then(
             ensure_task_exist_quotable_text().runs(lambda src, ctx: rm_responsible(src, ctx['title'])).then(
+                Literal('-all').runs(lambda src, ctx: rm_all_responsible(src, ctx['title']))
+            ).then(
                 GreedyText("players").runs(lambda src, ctx: rm_responsible(src, ctx['title'], ctx['players']))
             )
         ),
@@ -212,6 +216,14 @@ def set_task_deadline(source: CommandSource, titles: str, ddl: str) -> None:
     info_task(source, titles, headline_override=tr("ddl_set"))
     GlobalVariables.log(
         f"{source_name(source)} set task {titles} deadline to {formatted_time(deadline, locale='en_us')}"
+    )
+
+
+def clear_task_deadline(source: CommandSource, titles: str):
+    GlobalVariables.task_manager.set_deadline(TitleList(titles), 0)
+    info_task(source, titles, headline_override=tr('ddl_cleared'))
+    GlobalVariables.log(
+        f"{source_name(source)} removed task {titles} deadline"
     )
 
 
@@ -350,11 +362,16 @@ def rm_responsible(source: CommandSource, titles: str, players: Optional[str] = 
         else:
             illegal_call(source)
             return
-    players = players.split('.')
+    players = players.split(' ')
     removed = GlobalVariables.task_manager.rm_responsible(TitleList(titles), *players)
     num = len(removed)
     info_task(source, titles, headline_override=tr("mcd_task.removed_responsibles_title", num))
-    GlobalVariables.log(f"{source_name(source)} removed responsibles for task {str}: {str(players)}")
+    GlobalVariables.log(f"{source_name(source)} removed responsibles for task {str(titles)}: {str(players)}")
+
+
+def rm_all_responsible(source: CommandSource, titles: str):
+    players = GlobalVariables.task_manager.responsible_manager.get_responsibles(titles)
+    rm_responsible(source, titles, players=' '.join(players))
 
 
 def inherit_responsible(info: Info, old_name: str, new_name: str, debug=False):
