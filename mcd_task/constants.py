@@ -10,6 +10,8 @@ PREFIX = "!!task"
 
 # Data folder
 DATA_FOLDER = "./config/task"
+if not os.path.isdir(DATA_FOLDER):
+    os.makedirs(DATA_FOLDER)
 # Config file path
 CONFIG_PATH = os.path.join(DATA_FOLDER, "config.json")
 # Task file path

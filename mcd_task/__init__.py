@@ -47,8 +47,6 @@ def on_player_joined(server: PluginServerInterface, player: str, info: Info):
 def on_load(server: PluginServerInterface, prev_module):
     if prev_module is not None:
         pass
-    if not os.path.isdir(DATA_FOLDER):
-        os.makedirs(DATA_FOLDER)
     GlobalVariables.set_config(Config.load(server))
     GlobalVariables.setup_task_manager(TaskManager.load())
     register_cmd_tree(server)
