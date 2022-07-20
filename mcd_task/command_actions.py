@@ -252,7 +252,7 @@ def task_overview(source: CommandSource):
             if len(task_texts) >= GlobalVariables.config.overview_maximum_task_amount:
                 break
             if task.title not in task_texts.keys():
-                task_texts[task.full_path()] = RText('[!] ', RColor.gold).h(
+                task_texts[task.titles] = RText('[!] ', RColor.gold).h(
                     tr('has_a_high_priority', task.priority)
                 ) + title_text(task, display_full_path=True)
         task_text = RTextBase.join('\n', task_texts.values())

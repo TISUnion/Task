@@ -37,7 +37,7 @@ def on_player_joined(server: PluginServerInterface, player: str, info: Info):
     player_tasks = []
     now_time = float(time.time())
     for t in GlobalVariables.task_manager.responsible_manager[player]:
-        task = GlobalVariables.task_manager[t]
+        task = GlobalVariables.task_manager[t].titles
         if not task.is_done and now_time > task.deadline != 0:
             player_tasks.append(task)
     if len(player_tasks) > 0:
