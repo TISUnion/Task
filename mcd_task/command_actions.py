@@ -380,7 +380,7 @@ def inherit_responsible(info: Info, old_name: str, new_name: str, debug=False):
 
 
 def task_timed_out(server: PluginServerInterface, player: str, player_tasks: List[Task]):
-    text = tr("on_player_joined", len(player_tasks)).set_color(RColor.red).set_styles(RStyle.bold)
+    text = [tr("on_player_joined", len(player_tasks)).set_color(RColor.red).set_styles(RStyle.bold)]
     for t in player_tasks:
-        text.append('\n', title_text(t, display_full_path=True, display_not_empty_mark=True))
-    server.tell(player, text)
+        text.append(title_text(t, display_full_path=True, display_not_empty_mark=True))
+    server.tell(player, RTextBase.join('\n', text))
