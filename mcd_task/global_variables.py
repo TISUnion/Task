@@ -14,16 +14,7 @@ if TYPE_CHECKING:
 
 
 def inject_set_file_method(logger: MCDReforgedLogger):
-    class TaskLogger(MCDReforgedLogger):
-        def set_file(self, file_path=None):
-            if self.file_handler is not None:
-                self.removeHandler(self.file_handler)
-            self.file_handler = logging.FileHandler(LOG_PATH, encoding='UTF-8')
-            self.file_handler.setFormatter(self.FILE_FMT)
-            self.addHandler(self.file_handler)
-
-    logger.set_file = types.MethodType(TaskLogger.set_file, logger)
-    logger.set_file()
+    logger.set_file(LOG_PATH)
     return logger
 
 
