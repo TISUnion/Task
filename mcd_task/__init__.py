@@ -51,3 +51,7 @@ def on_load(server: PluginServerInterface, prev_module):
     GlobalVariables.setup_task_manager(TaskManager.load())
     register_cmd_tree(server)
     server.register_help_message(PREFIX, server.tr("mcd_task.mcdr_help"))
+
+
+def on_unload(*args, **kwargs):
+    GlobalVariables.logger.unset_file()
