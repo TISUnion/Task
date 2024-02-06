@@ -51,6 +51,7 @@ mcd_task:
   list_task_title: "搬砖信息列表: "
   add_task_hover: 点此§6添加§e新任务§r
   add_sub_task_hover: 点此§6添加§e新子任务§r
+  edit_task_hover: 点此§6变更§e任务说明§r
   done_task_button: '[已完成任务...]'
   done_task_hover: 点此§6查阅§r被标记为§e完成§r的任务
   task_already_exist: 任务已存在, 点此查阅任务列表

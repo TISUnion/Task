@@ -48,6 +48,7 @@ mcd_task:
   player_tasks_title: 'Player §3{}§a§l has §3{}§a§l tasks to do: '
   list_task_title: 'Task information list: '
   add_task_hover: Click here to §6add§e a new task§r
+  edit_task_hover: Click here to §6edit§e task description§r
   add_sub_task_hover: Click here to §6add§e a new sub-task§r
   info_task_title: 'Task detailed information: '
   done_task_button: '[Finished tasks...]'
