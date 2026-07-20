@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-from mcdreforged.api.all import PluginServerInterface, Serializable
+from mcdreforged.api.all import PluginServerInterface, Serializable, MCDReforgedLogger
 
 from mcd_task.constants import CONFIG_PATH, DEBUG_MODE
 
@@ -20,6 +20,7 @@ class Config(Serializable):
     default_overview_instead_of_list: bool = True
     overview_deadline_warning_threshold: int = 1  # days
     overview_maximum_task_amount: int = 10
+    no_line_break_texts: bool = False
 
     @classmethod
     def load(cls, server: PluginServerInterface):
@@ -68,11 +69,19 @@ class Config(Serializable):
             dic = dic[k]
 
     def __getitem__(self, key: str) -> Any:
+        def debug(text, **kwargs) -> None:
+            logger = self.__server.logger
+            if isinstance(logger, MCDReforgedLogger):
+                kwargs['no_check'] = True
+                logger.mdebug(text, **kwargs)
+            else:
+                logger.debug(text, **kwargs)
+
         ret = self.__get_key_from_dict(self.serialize(), key)
         if ret is None:
-            self.__server.logger.debug("An empty value is returned from config, is it a invalid key?\n" +
+            debug("An empty value is returned from config, is it a invalid key?\n" +
                                        "Requested key: {}".format(key), no_check=DEBUG_MODE)
-            default_value = self.__get_key_from_dict(self.get_default(), key)
+            default_value = self.__get_key_from_dict(self.get_default().serialize(), key)
             if default_value:
                 self.__set_key_to_dict(vars(self), key, default_value)
                 self.save()

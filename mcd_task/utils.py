@@ -1,9 +1,10 @@
 import time
 from typing import Optional, Union, List
 
-from mcdreforged.command.command_source import CommandSource, PlayerCommandSource
+from mcdreforged.api.all import RTextBase, CommandSource, PlayerCommandSource
 
 from mcd_task.global_variables import GlobalVariables
+from mcd_task.rtext_split import split_rtext
 
 
 class TitleList:
@@ -75,3 +76,24 @@ def source_name(source: CommandSource):
         return source.player
     else:
         return source.__class__.__name__
+
+
+def reply(source: CommandSource, text: Union[str, RTextBase], **kwargs) -> None:
+    config = GlobalVariables.config
+    if isinstance(text, RTextBase) and config is not None and config.no_line_break_texts:
+        with source.preferred_language_context():
+            text_list = split_rtext(text, divider='\n')
+        for line in text_list:
+            source.reply(line, **kwargs)
+    else:
+        source.reply(text, **kwargs)
+
+
+def say(text: Union[str, RTextBase], **kwargs) -> None:
+    config = GlobalVariables.config
+    if isinstance(text, RTextBase) and config is not None and config.no_line_break_texts:
+        text_list = split_rtext(text, divider='\n')
+        for line in text_list:
+            GlobalVariables.server.say(line, **kwargs)
+    else:
+        GlobalVariables.server.say(text, **kwargs)

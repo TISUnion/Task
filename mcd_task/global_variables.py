@@ -1,20 +1,19 @@
 import logging
-import os.path
 import re
-import types
 from typing import Optional, Union, TYPE_CHECKING
+
 from mcdreforged.api.all import RTextBase, RTextList, RText, RAction, ServerInterface, MCDReforgedLogger
 
-from mcd_task.config import Config
-from mcd_task.constants import LOG_PATH, PREFIX, DEBUG_MODE, DATA_FOLDER
-
+from mcd_task.constants import PREFIX, DEBUG_MODE
 
 if TYPE_CHECKING:
     from mcd_task.task_manager import TaskManager
+    from mcd_task.config import Config
 
 
-def inject_set_file_method(logger: MCDReforgedLogger):
-    logger.set_file(LOG_PATH)
+def inject_set_file_method(logger: Union[logging.Logger, MCDReforgedLogger]):
+    # Safe changes for future MCDR updates
+    # logger.set_file(LOG_PATH)
     return logger
 
 
@@ -25,7 +24,7 @@ class GlobalVariables:
     if server is not None:
         server = server.as_plugin_server_interface()
         logger = inject_set_file_method(server.logger)
-    config = None
+    config = None  # type: Config
 
     @classmethod
     def log(cls, msg):
@@ -33,7 +32,10 @@ class GlobalVariables:
 
     @classmethod
     def debug(cls, msg):
-        cls.logger.debug(msg, no_check=DEBUG_MODE)
+        if isinstance(cls.logger, MCDReforgedLogger):
+            cls.logger.mdebug(msg, no_check=DEBUG_MODE)
+        else:
+            cls.logger.debug(msg)
 
     @classmethod
     def tr(cls, key: Optional[str], *args, **kwargs):
