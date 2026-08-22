@@ -4,7 +4,16 @@ from typing import Optional, Union, List
 from mcdreforged.api.all import RTextBase, CommandSource, PlayerCommandSource
 
 from mcd_task.global_variables import GlobalVariables
-from mcd_task.rtext_split import split_rtext
+from mcd_task.complex_text import RComplexText
+
+
+__OLDER_VERSION_COMPAT_CHAR_REPLACEMENT = {
+    '⬛': "[*]",
+    '⬜': "[ ]",
+    '【': "[",
+    '】': "]",
+    '✎': "~"
+}
 
 
 class TitleList:
@@ -78,11 +87,18 @@ def source_name(source: CommandSource):
         return source.__class__.__name__
 
 
+def __apply_compat_strings(text: Union[str, RTextBase]) -> Union[str, RTextBase]:
+    text = RComplexText.from_rtext(text).strip_format_codes()
+    for k, v in __OLDER_VERSION_COMPAT_CHAR_REPLACEMENT.items():
+        text = text.replace(k, v)
+    return text
+
+
 def reply(source: CommandSource, text: Union[str, RTextBase], **kwargs) -> None:
     config = GlobalVariables.config
-    if isinstance(text, RTextBase) and config is not None and config.no_line_break_texts:
+    if isinstance(text, RTextBase) and config is not None and config.legacy_text_compat:
         with source.preferred_language_context():
-            text_list = split_rtext(text, divider='\n')
+            text_list = __apply_compat_strings(text).split('\n')
         for line in text_list:
             source.reply(line, **kwargs)
     else:
@@ -91,8 +107,8 @@ def reply(source: CommandSource, text: Union[str, RTextBase], **kwargs) -> None:
 
 def say(text: Union[str, RTextBase], **kwargs) -> None:
     config = GlobalVariables.config
-    if isinstance(text, RTextBase) and config is not None and config.no_line_break_texts:
-        text_list = split_rtext(text, divider='\n')
+    if isinstance(text, RTextBase) and config is not None and config.legacy_text_compat:
+        text_list = __apply_compat_strings(text).split('\n')
         for line in text_list:
             GlobalVariables.server.say(line, **kwargs)
     else:

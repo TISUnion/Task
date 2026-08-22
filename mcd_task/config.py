@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 from mcdreforged.api.all import PluginServerInterface, Serializable, MCDReforgedLogger
+from mcdreforged.handler.abstract_server_handler import
 
 from mcd_task.constants import CONFIG_PATH, DEBUG_MODE
 
@@ -20,7 +21,7 @@ class Config(Serializable):
     default_overview_instead_of_list: bool = True
     overview_deadline_warning_threshold: int = 1  # days
     overview_maximum_task_amount: int = 10
-    no_line_break_texts: bool = False
+    legacy_text_compat: bool = False
 
     @classmethod
     def load(cls, server: PluginServerInterface):
