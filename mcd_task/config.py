@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional
 
 from mcdreforged.api.all import PluginServerInterface, Serializable, MCDReforgedLogger
-from mcdreforged.handler.abstract_server_handler import
 
 from mcd_task.constants import CONFIG_PATH, DEBUG_MODE
 
