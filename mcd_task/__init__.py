@@ -8,7 +8,7 @@ from parse import parse
 
 
 def on_info(server: PluginServerInterface, info: Info):
-    if info.is_from_server and GlobalVariables.config["detect_player_rename"]:
+    if info.is_from_server and GlobalVariables.config.detect_player_rename:
         psd = parse(PLAYER_RENAMED, info.content)
         if psd is not None:
             inherit_responsible(info, **psd.named)
@@ -52,6 +52,7 @@ def on_load(server: PluginServerInterface, prev_module):
     register_cmd_tree(server)
     server.register_help_message(PREFIX, server.tr("mcd_task.mcdr_help"))
 
-
+"""
 def on_unload(*args, **kwargs):
     GlobalVariables.logger.unset_file()
+"""

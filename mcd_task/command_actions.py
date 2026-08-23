@@ -7,7 +7,7 @@ from mcd_task.global_variables import GlobalVariables
 from mcd_task.constants import PREFIX, DEBUG_MODE
 from mcd_task.exceptions import TaskNotFound
 from mcd_task.task_manager import Task
-from mcd_task.utils import formatted_time, source_name, TitleList
+from mcd_task.utils import formatted_time, source_name, TitleList, reply
 from mcd_task.rtext_components import tr, info_elements, title_text, info_responsibles, add_task_button, \
     EditButtonType, info_sub_tasks, sub_task_title_text
 
@@ -131,28 +131,29 @@ list_cmd = f"{PREFIX} list"
 def cmd_error(source: CommandSource, exception: CommandError):
     if isinstance(exception, RequirementNotMet):
         if exception.has_custom_reason():
-            source.reply(exception.get_reason().set_color(RColor.red))
+            reply(source, exception.get_reason().set_color(RColor.red))
             return
-    source.reply(
+    reply(
+        source,
         tr("mcd_task.cmd_error").set_color(RColor.red).h(
             tr("mcd_task.get_help")).c(RAction.run_command, "{} help".format(PREFIX))
     )
 
 
 def task_not_found(source: CommandSource):
-    source.reply(tr("mcd_task.task_not_found").h(tr("mcd_task.task_not_found_hover", list_cmd)).set_color(RColor.red).c(
+    reply(source, tr("mcd_task.task_not_found").h(tr("mcd_task.task_not_found_hover", list_cmd)).set_color(RColor.red).c(
         RAction.run_command, list_cmd
     ))
 
 
 def task_already_exist(source: CommandSource):
-    source.reply(tr("task_already_exist").set_color(RColor.red).c(RAction.run_command, f'{PREFIX} list').h(
+    reply(source, tr("task_already_exist").set_color(RColor.red).c(RAction.run_command, f'{PREFIX} list').h(
         tr("task_not_found_hover", PREFIX)
     ))
 
 
 def illegal_call(source: CommandSource):
-    source.reply(tr('illegal_call').set_color(RColor.red))
+    reply(source, tr('illegal_call').set_color(RColor.red))
 
 
 # Info
@@ -163,7 +164,7 @@ def info_player(source: CommandSource, name: str) -> None:
     ]
     for task in tasks:
         text.append(title_text(task, display_full_path=True, display_not_empty_mark=True))
-    source.reply(RText.join('\n', text))
+    reply(source, RText.join('\n', text))
 
 
 def info_task(source: CommandSource, title: str, headline_override: Union[None, str, RTextBase] = None) -> None:
@@ -191,7 +192,7 @@ def info_task(source: CommandSource, title: str, headline_override: Union[None, 
     info_sub = info_sub_tasks(target_task)
 
     # Show task text
-    source.reply(RText.join('\n', [headline, task_title_text, info_desc, info_ddl, info_priority, info_res, info_sub]))
+    reply(source, RText.join('\n', [headline, task_title_text, info_desc, info_ddl, info_priority, info_res, info_sub]))
 
 
 # Others
@@ -203,7 +204,7 @@ def list_task(source: CommandSource):
         task_list_text.append(title_text(task, display_not_empty_mark=True))
     task_list_text = RTextBase.join('\n', task_list_text)
     text = [headline, task_list_text]
-    source.reply(RText.join('\n', text))
+    reply(source, RText.join('\n', text))
 
 
 def set_task_deadline(source: CommandSource, titles: str, ddl: str) -> None:
@@ -259,7 +260,7 @@ def task_overview(source: CommandSource):
 
     help_message = tr('overview_help', PREFIX).set_translator(GlobalVariables.htr)
 
-    source.reply(RTextBase.join('\n', [headline, task_text, help_message]))
+    reply(source, RTextBase.join('\n', [headline, task_text, help_message]))
 
 
 def set_task_priority(source: CommandSource, titles: str, priority: Optional[int] = None):
@@ -271,7 +272,7 @@ def set_task_priority(source: CommandSource, titles: str, priority: Optional[int
 def reload_self(source: CommandSource):
     server = GlobalVariables.server
     server.reload_plugin(server.get_self_metadata().id)
-    source.reply(tr('reloaded'))
+    reply(source, tr('reloaded'))
 
 
 def show_help(source: CommandSource):
@@ -279,7 +280,7 @@ def show_help(source: CommandSource):
     ver = '.'.join(map(lambda x: str(x), meta.version.component))
     if meta.version.pre is not None:
         ver += '-' + str(meta.version.pre)
-    source.reply(tr('help_msg', pre=PREFIX, name=meta.name, ver=ver).set_translator(GlobalVariables.htr))
+    reply(source, tr('help_msg', pre=PREFIX, name=meta.name, ver=ver).set_translator(GlobalVariables.htr))
 
 
 def add_task(source: CommandSource, titles: str, desc: str = ''):
@@ -298,18 +299,18 @@ def all_tasks_detail(source: CommandSource):
         task_details.append(title_text(task, include_sub=False, display_not_empty_mark=True))
         if len(task.sub_tasks) > 0:
             task_details.append(sub_task_title_text(task, indent=8))
-    source.reply(RTextBase.join('\n', task_details))
+    reply(source, RTextBase.join('\n', task_details))
 
 
 def remove_task(source: CommandSource, titles: str):
     GlobalVariables.task_manager.delete_task(TitleList(titles))
-    source.reply(tr("mcd_task.deleted_task", "§e{}§r".format(titles)))
+    reply(source, tr("mcd_task.deleted_task", "§e{}§r".format(titles)))
     GlobalVariables.log(f"{source_name(source)} deleted task {titles}")
 
 
 def rename_task(source: CommandSource, old_titles: str, new_title: str) -> None:
     if '.' in list(new_title):
-        source.reply(tr("mcd_task.illegal_title_with_dot", new_title))
+        reply(source, tr("mcd_task.illegal_title_with_dot", new_title))
         return
     GlobalVariables.task_manager.rename_task(TitleList(old_titles), new_title)
     new_titles = TitleList(old_titles)
