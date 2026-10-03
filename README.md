@@ -6,7 +6,7 @@ A plugin shows tasks of project in progress
 
 Requires [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
 
-[stext](https://github.com/TISUnion/stext) is no longer required. [MCDeamon](https://github.com/kafuuchino-desu/MCDaemon) and [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x and earlier is no longer supported
+[stext](https://github.com/TISUnion/stext) is no longer required. [MCDaemon](https://github.com/kafuuchino-desu/MCDaemon) and [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x and earlier is no longer supported
 
 ### Usage
 

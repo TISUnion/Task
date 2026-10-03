@@ -6,7 +6,7 @@
 
 需要 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
 
-不再需要 [stext](https://github.com/TISUnion/stext), 不再兼容 [MCDeamon](https://github.com/kafuuchino-desu/MCDaemon) 及 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x及以下版本
+不再需要 [stext](https://github.com/TISUnion/stext), 不再兼容 [MCDaemon](https://github.com/kafuuchino-desu/MCDaemon) 及 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 1.x及以下版本
 
 ### 用法
 
